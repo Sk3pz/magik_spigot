@@ -1,7 +1,0 @@
-name: Magik
-main: es.skepz.magik.Magik
-version: 1.0.0
-api-version: '1.20'
-commands:
-  magik:
-    description: change the race of a player
