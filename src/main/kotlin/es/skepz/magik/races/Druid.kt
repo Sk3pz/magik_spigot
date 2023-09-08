@@ -15,6 +15,8 @@ import org.bukkit.event.block.Action
 import org.bukkit.event.block.BlockBreakEvent
 import org.bukkit.event.entity.EntityDamageByEntityEvent
 import org.bukkit.event.entity.PlayerDeathEvent
+import org.bukkit.event.inventory.InventoryAction
+import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.player.PlayerDropItemEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerRespawnEvent
@@ -66,7 +68,7 @@ class Druid(magik: Magik) : Race(magik) {
             Component.text(colorize("  &8- &cActs like regen to undead mobs")),
             Component.text(colorize("&7- &aSpeed 1")),
             Component.text(colorize("&7- &aAutomatically replants crops")),
-            Component.text(colorize("&7- &a1.5x crop yield")),
+            Component.text(colorize("&7- &a2x crop yield")),
             Component.text(colorize("&7- &c-1 max hearts")),
             Component.text(colorize("&7- &cDecreased max health in Nether and End"))))
         item.setItemMeta(meta)
@@ -100,37 +102,46 @@ class Druid(magik: Magik) : Race(magik) {
     private fun handleDrops(block: Block, harvestItem: ItemStack?) {
         val enchlvl = if (harvestItem != null) {
             val i = harvestItem.clone()
-            val meta = i.itemMeta
-            var lvl = 2
-            if (meta.hasEnchant(Enchantment.LOOT_BONUS_BLOCKS)) {
-                lvl += i.getEnchantmentLevel(Enchantment.LOOT_BONUS_BLOCKS)
-                meta.removeEnchant(Enchantment.LOOT_BONUS_BLOCKS)
+            if (i.hasItemMeta()) {
+                val meta = i.itemMeta
+                var lvl = 0
+                if (meta.hasEnchant(Enchantment.LOOT_BONUS_BLOCKS)) {
+                    lvl += i.getEnchantmentLevel(Enchantment.LOOT_BONUS_BLOCKS)
+                }
+                lvl
+            } else {
+                0
             }
-            lvl
         } else {
-            2
+            0
         }
+
+        val multiplier = 2 + ceil(enchlvl * 1.2).toInt()
+        val loc = block.location
+
         when (block.type) {
             Material.WHEAT -> {
-                val drops = listOf(ItemStack(Material.WHEAT, random(1, 3) * enchlvl), ItemStack(Material.WHEAT_SEEDS, random(1, 4) * enchlvl))
+                val drops = listOf(ItemStack(Material.WHEAT, 1 * random(1, multiplier)),
+                    ItemStack(Material.WHEAT_SEEDS, random(1, 4) * multiplier))
                 for (d in drops) {
-                    dropItem(block.location, d)
+                    dropItem(loc, d)
                 }
             }
             Material.POTATOES -> {
-                dropItem(block.location, ItemStack(Material.CARROT, ceil(random(2, 5) * 1.5).toInt() * enchlvl))
+                dropItem(loc, ItemStack(Material.POTATO, random(1, 3) * random(1, multiplier)))
             }
             Material.CARROTS -> {
-                dropItem(block.location, ItemStack(Material.CARROT, ceil(random(2, 5) * 1.5).toInt() * enchlvl))
+                dropItem(loc, ItemStack(Material.CARROT, random(1, 3) * random(1, multiplier)))
             }
             Material.BEETROOTS -> {
-                val drops = listOf(ItemStack(Material.BEETROOT, random(1, 3) * enchlvl), ItemStack(Material.BEETROOT_SEEDS, random(1, 4) * enchlvl))
+                val drops = listOf(ItemStack(Material.BEETROOT, 1 * random(1, multiplier)),
+                    ItemStack(Material.BEETROOT_SEEDS, random(1, 4) * multiplier))
                 for (d in drops) {
-                    dropItem(block.location, d)
+                    dropItem(loc, d)
                 }
             }
             Material.COCOA -> {
-                dropItem(block.location, ItemStack(Material.POTATO, random(3, 5) * enchlvl))
+                dropItem(loc, ItemStack(Material.POTATO, random(3, 5) * enchlvl))
             }
             else -> return
         }
@@ -142,21 +153,7 @@ class Druid(magik: Magik) : Race(magik) {
                 val data = block.blockData as Ageable
                 data.age = 0
                 block.blockData = data
-                val drops = if (harvestItem != null) {
-                    block.getDrops(harvestItem)
-                } else {
-                    block.drops
-                }
-                if (drops.isEmpty()) return true
-                val first = drops.first()
-                val size = ceil(drops.size * 1.5)
-                while (drops.size < size) {
-                    val add = ItemStack(first.type, 1)
-                    drops.add(add)
-                }
-                for (i in drops) {
-                    dropItem(block.location, i)
-                }
+                handleDrops(block, harvestItem)
                 return true
             }
             else -> {}
@@ -213,6 +210,17 @@ class Druid(magik: Magik) : Race(magik) {
         if (!isDruid(p)) return
         val item = event.itemDrop.itemStack
         if (checkStick(item)) {
+            event.isCancelled = true
+            playSound(p, Sound.BLOCK_NOTE_BLOCK_BASS, 1, 0.1f)
+        }
+    }
+
+    @EventHandler
+    fun onClick(event: InventoryClickEvent) {
+        val p = event.whoClicked as Player
+        if (!isDruid(p)) return
+        val item = event.currentItem ?: return
+        if (checkStick(item) && event.action == InventoryAction.MOVE_TO_OTHER_INVENTORY) {
             event.isCancelled = true
             playSound(p, Sound.BLOCK_NOTE_BLOCK_BASS, 1, 0.1f)
         }
