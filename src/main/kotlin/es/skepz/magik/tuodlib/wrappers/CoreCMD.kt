@@ -1,66 +1,69 @@
 package es.skepz.magik.tuodlib.wrappers
 
+import es.skepz.magik.tuodlib.*
 import org.bukkit.command.Command
 import org.bukkit.command.CommandExecutor
 import org.bukkit.command.CommandSender
 import org.bukkit.command.TabCompleter
 import org.bukkit.entity.Player
 import org.bukkit.plugin.java.JavaPlugin
-import es.skepz.magik.tuodlib.*
-import java.util.*
 
-abstract class CoreCMD
-protected constructor(private val plugin: JavaPlugin, private val cmd: String,
-                      private val usage: String, private val argc: Int,
-                      var permission: String, var onlyPlayer: Boolean,
-                      var tabCom: Boolean) : CommandExecutor, TabCompleter {
+abstract class CoreCMD protected constructor(
+    private val plugin: JavaPlugin,
+    private val cmd: String,
+    private val usage: String,
+    private val argc: Int,
+    var permission: String,
+    var onlyPlayer: Boolean,
+    var tabCom: Boolean
+) : CommandExecutor, TabCompleter {
 
-    lateinit var sender: CommandSender
-    lateinit var args: ArrayList<String>
+    class Context(val sender: CommandSender, val args: Array<String>)
+
     var helpMessage: String = "&7Usage: &c$usage"
 
-    abstract fun init()
-    abstract fun run()
+    abstract fun Context.run()
+    abstract fun registerTabComplete(sender: CommandSender, args: Array<String>): List<String>
 
-    abstract fun registerTabComplete(sender: CommandSender, args: ArrayList<String>): List<String>
-    override fun onTabComplete(s: CommandSender, cmd: Command, alias: String, args: Array<String>): List<String> {
-        sender = s
-        return registerTabComplete(sender, ArrayList(listOf(*args)))
+    override fun onTabComplete(sender: CommandSender, cmd: Command, alias: String, args: Array<String>): List<String> {
+        return registerTabComplete(sender, args)
     }
 
     fun register() {
-        plugin.getCommand(cmd)!!.setExecutor(this)
-        if (tabCom) plugin.getCommand(cmd)!!.tabCompleter = this
+
+        val command = plugin.getCommand(cmd)
+            ?: return
+
+        command.setExecutor(this)
+
+        if (tabCom) {
+            command.tabCompleter = this
+        }
     }
 
-    fun invalidUse() {
+    fun Context.invalidUse() {
         invalidCmdUsage(sender, usage)
     }
 
-    val isPlayer: Boolean
-        get() = sender is Player
+    fun Context.requirePlayer(): Boolean {
 
-    fun requirePlayer(): Boolean {
-        if (!isPlayer) notPlayer(sender)
-        return isPlayer
+        if (sender !is Player) {
+            notPlayer(sender)
+        }
+
+        return true
     }
 
-    fun getPlayer(): Player? {
-        return if (isPlayer) sender as Player else null
-    }
-
-    // Command will run init(), then will check permissions and for player
+    // Will check permissions and for player
     // then execute run()
-    override fun onCommand(s: CommandSender, cmd: Command, alias: String, args: Array<String>): Boolean {
-        this.args = ArrayList(listOf(*args)) // put args into arraylist
-        sender = s // set the sender
-        init() // run init function
+    override fun onCommand(sender: CommandSender, cmd: Command, alias: String, args: Array<String>): Boolean {
+
         if (args.size == 1 && args[0] == "?") { // if user is running the help function
             sendMessage(sender, helpMessage)
             return true
         }
 
-        if (onlyPlayer && !isPlayer) { // if command requires sender to be a player, run the check
+        if (onlyPlayer && sender is Player) { // if command requires sender to be a player, run the check
             requirePlayer(sender)
             return true
         }
@@ -71,11 +74,12 @@ protected constructor(private val plugin: JavaPlugin, private val cmd: String,
         }
 
         if (args.size < argc) { // check if there is a correct amount of arguments
-            invalidUse()
+            invalidCmdUsage(sender, usage)
             return true
         }
 
-        run() // run the main code
+
+        Context(sender, args).run() // run the main code
 
         return true
     }

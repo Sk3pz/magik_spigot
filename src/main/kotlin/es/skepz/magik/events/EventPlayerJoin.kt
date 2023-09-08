@@ -11,15 +11,19 @@ class EventPlayerJoin(val magik: Magik) : CoreEvent(magik) {
 
     @EventHandler
     fun onJoin(event: PlayerJoinEvent) {
-        val player = event.player
 
+        val player = event.player
         val file = UserFile(magik, player)
+
         magik.userFiles[player.uniqueId] = file
+
         val race = file.getRace()
         if (race == null) {
             // TODO: Race selection here
             return
         }
+
         setRace(magik, player, race)
     }
+
 }

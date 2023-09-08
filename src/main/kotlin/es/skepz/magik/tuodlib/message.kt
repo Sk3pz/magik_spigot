@@ -10,37 +10,37 @@ import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
 
 object Color {
-    const val primary = "&7"
-    const val focused = "&3"
-    const val secondary = "&b"
-    const val errorPrimary = "&4"
-    const val errorSecondary = "&c"
-    const val errorFocused = "&f"
+    const val PRIMARY = "&7"
+    const val FOCUSED = "&3"
+    const val SECONDARY = "&b"
+    const val ERROR_PRIMARY = "&4"
+    const val ERROR_SECONDARY = "&c"
+    const val ERROR_FOCUSED = "&f"
 }
 /***
  * @return returns the main (primary) color of the plugin
  ***/
-fun cPri(): String { return Color.primary }
+fun cPri(): String { return Color.PRIMARY }
 /***
  * @return returns the special (focused) color of the plugin
  ***/
-fun cFoc(): String { return Color.focused }
+fun cFoc(): String { return Color.FOCUSED }
 /***
  * @return returns the secondary color of the plugin
  ***/
-fun cSnd(): String { return Color.secondary }
+fun cSnd(): String { return Color.SECONDARY }
 /***
  * @return returns the primary error color of the plugin
  ***/
-fun cErr(): String { return Color.errorPrimary }
+fun cErr(): String { return Color.ERROR_PRIMARY }
 /***
  * @return returns the secondary error color of the plugin
  ***/
-fun cESn(): String { return Color.errorSecondary }
+fun cESn(): String { return Color.ERROR_SECONDARY }
 /***
  * @return returns the focused error color of the plugin
  ***/
-fun cEFc(): String { return Color.errorFocused }
+fun cEFc(): String { return Color.ERROR_FOCUSED }
 
 /***
  * Sends a message to a player

@@ -21,7 +21,6 @@ import java.util.*
  ***/
 fun colorize(str: String): String {
     return ChatColor.translateAlternateColorCodes('&', str)
-    //return ChatColor.translateAlternateColorCodes('&', str)
 }
 /***
  * Converts all color codes (color code with a '&' in front of it) to minecraft readable color
@@ -33,8 +32,7 @@ fun decolorize(str: String): String {
 }
 
 fun deserializeComponent(cmp: Component): String {
-    val serializer = PlainTextComponentSerializer.plainText()
-    return serializer.serialize(cmp)
+    return PlainTextComponentSerializer.plainText().serialize(cmp)
 }
 
 /***
@@ -140,7 +138,7 @@ fun spawnEntity(loc: Location, type: EntityType): Entity {
  ***/
 fun dropItem(loc: Location, item: ItemStack): Item {
     val i = spawnEntity(loc, EntityType.DROPPED_ITEM) as Item
-    i.setItemStack(item)
+    i.itemStack = item
     return i
 }
 
@@ -209,7 +207,7 @@ fun getEnch(type: String): Enchantment? {
         "knockback" -> Enchantment.KNOCKBACK
         "fortune", "loot_bonus_blocks" -> Enchantment.LOOT_BONUS_BLOCKS
         "looting", "loot_bonus_mobs" -> Enchantment.LOOT_BONUS_MOBS
-        "loyalty", "loyalty" -> Enchantment.LOYALTY
+        "loyalty" -> Enchantment.LOYALTY
         "luck_of_the_sea", "luck" -> Enchantment.LUCK
         "lure" -> Enchantment.LURE
         "mending" -> Enchantment.MENDING

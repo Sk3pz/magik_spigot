@@ -1,9 +1,8 @@
 package es.skepz.magik.tuodlib.wrappers
 
-import org.bukkit.Bukkit
+import es.skepz.magik.Magik
 import org.bukkit.configuration.file.FileConfiguration
 import org.bukkit.configuration.file.YamlConfiguration
-import org.bukkit.plugin.java.JavaPlugin
 import java.io.File
 
 /**
@@ -11,21 +10,42 @@ import java.io.File
  * @param fileName the name of the file (automatically adds .yml)
  * @param folder the folder which the config should be held in (empty if in data folder)
  */
-open class CFGFile(plugin: JavaPlugin, private val fileName: String, folder: String) {
+open class CFGFile(val plugin: Magik, private val fileName: String, folder: String) {
+
     var cfg: FileConfiguration
         private set
+
     private val file: File
     private val dataFolder: File
+
+
+    init {
+
+        if (!plugin.dataFolder.exists()) {
+            plugin.dataFolder.mkdir()
+        }
+
+        dataFolder = File(plugin.dataFolder.toString() + File.separator + folder).also { it.mkdir() }
+        file = File(dataFolder, "$fileName.yml")
+
+        if (!file.exists()) {
+            file.createNewFile()
+        }
+
+        cfg = YamlConfiguration.loadConfiguration(file)
+    }
 
     /**
      * assert that a value exists in the file (for making default values)
      * @return true if set value
      */
     fun default(key: String?, obj: Any?): Boolean {
+
         if (!cfg.contains(key!!)) {
             set(key, obj)
             return true
         }
+
         return false
     }
 
@@ -33,12 +53,15 @@ open class CFGFile(plugin: JavaPlugin, private val fileName: String, folder: Str
      * @return returns true if saved successfully
      */
     fun save(): Boolean {
+
         try {
             cfg.save(file)
-        } catch (ex: Exception) {
-            Bukkit.getServer().logger.severe("Could not save $fileName.yml!")
+        }
+        catch (ex: Exception) {
+            plugin.server.logger.severe("Could not save $fileName.yml!")
             return false
         }
+
         return true
     }
 
@@ -54,18 +77,4 @@ open class CFGFile(plugin: JavaPlugin, private val fileName: String, folder: Str
         save()
     }
 
-    init {
-        if (!plugin.dataFolder.exists()) plugin.dataFolder.mkdir()
-        dataFolder = File(plugin.dataFolder.toString() + File.separator + folder)
-        if (!dataFolder.exists()) dataFolder.mkdir()
-        file = File(dataFolder, "$fileName.yml")
-        if (!file.exists()) {
-            try {
-                file.createNewFile()
-            } catch (ex: Exception) {
-                Bukkit.getServer().logger.severe("could not create $fileName.yml")
-            }
-        }
-        cfg = YamlConfiguration.loadConfiguration(file)
-    }
 }

@@ -1,20 +1,19 @@
 package es.skepz.magik.races
 
 import es.skepz.magik.Magik
+import es.skepz.magik.tuodlib.colorize
+import es.skepz.magik.tuodlib.sendMessage
 import net.kyori.adventure.text.Component
 import org.bukkit.Material
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
-import org.bukkit.event.player.PlayerInteractEvent
-import org.bukkit.inventory.ItemStack
-import es.skepz.magik.tuodlib.colorize
-import es.skepz.magik.tuodlib.sendMessage
 import org.bukkit.event.block.Action
 import org.bukkit.event.block.BlockBreakEvent
+import org.bukkit.event.player.PlayerInteractEvent
+import org.bukkit.inventory.ItemStack
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 import java.util.*
-import kotlin.collections.HashMap
 
 class Dwarf(magik: Magik) : Race(magik) {
 
@@ -30,26 +29,27 @@ class Dwarf(magik: Magik) : Race(magik) {
     }
 
     override fun guiDisplayItem(): ItemStack {
+
         val item = ItemStack(Material.DIAMOND_PICKAXE, 1)
-        val meta = item.itemMeta
-        meta.isUnbreakable = true
-        meta.displayName(Component.text(colorize("&7&lDwarf")))
-        meta.lore(listOf(
-            Component.text(colorize("&7- &aDwarven Pickaxe: different modes to help mine")),
-            //Component.text(colorize("&7- &aOre Sense (5 blocks distance)")),
-            Component.text(colorize("&7- &aPermanent haste 2")),
-            Component.text(colorize("&7- &a+2 max hearts")),
-            Component.text(colorize("&7- &cSlowness")),
-            //Component.text(colorize("&7- &cBlindness when not underground")) // todo: tbd
-        ))
-        item.setItemMeta(meta)
+
+        item.itemMeta = item.itemMeta.also {
+            it.isUnbreakable = true
+            it.displayName(Component.text(colorize("&7&lDwarf")))
+            it.lore(listOf(
+                Component.text(colorize("&7- &aDwarven Pickaxe: different modes to help mine")),
+                //Component.text(colorize("&7- &aOre Sense (5 blocks distance)")),
+                Component.text(colorize("&7- &aPermanent haste 2")),
+                Component.text(colorize("&7- &a+2 max hearts")),
+                Component.text(colorize("&7- &cSlowness")),
+                //Component.text(colorize("&7- &cBlindness when not underground")) // todo: tbd
+            ))
+        }
 
         return item
     }
 
     private fun isDwarf(p: Player): Boolean {
-        val race = getRace(magik, p)
-        return race != null && race is Dwarf
+         return getRace(magik, p) is Dwarf
     }
 
     override fun name(): String {
@@ -83,7 +83,10 @@ class Dwarf(magik: Magik) : Race(magik) {
     }
 
     private fun changeMode(player: Player) {
-        val mode = playerMode[player.uniqueId] ?: return sendMessage(player, "&cFailed to change pickaxe mode, if this persists please leave and rejoin to fix the issue.")
+
+        val mode = playerMode[player.uniqueId]
+            ?: return sendMessage(player, "&cFailed to change pickaxe mode, if this persists please leave and rejoin to fix the issue.")
+
         when (mode) {
             PickaxeMode.Mine  -> setMode(player, PickaxeMode.Vein)
             PickaxeMode.Vein  -> setMode(player, PickaxeMode.Silk)
@@ -94,18 +97,31 @@ class Dwarf(magik: Magik) : Race(magik) {
 
     @EventHandler
     fun onPlayerInteract(event: PlayerInteractEvent) {
-        val p = event.player
-        if (!isDwarf(p)) return
-        if (event.action != Action.RIGHT_CLICK_BLOCK && event.action != Action.RIGHT_CLICK_AIR) return
-        val item = event.item ?: return
-        if (!checkPickaxe(item)) return
-        if (!p.isSneaking) changeMode(p)
+
+        val player = event.player.takeIf { isDwarf(it) }
+            ?: return
+
+        if (event.action != Action.RIGHT_CLICK_BLOCK && event.action != Action.RIGHT_CLICK_AIR) {
+            return
+        }
+
+        val item = event.item
+            ?: return
+
+        if (!checkPickaxe(item)) {
+            return
+        }
+
+        if (!player.isSneaking) {
+            changeMode(player)
+        }
     }
 
     @EventHandler
     fun onBreak(event: BlockBreakEvent) {
-        val p = event.player
-        if (!isDwarf(p)) return
+
+        val player = event.player.takeIf { isDwarf(it) }
+            ?: return
 
         val block = event.block
     }

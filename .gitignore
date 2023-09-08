@@ -1,2 +1,5 @@
 .idea/
 target/
+magik.iml
+.gradle/
+build/

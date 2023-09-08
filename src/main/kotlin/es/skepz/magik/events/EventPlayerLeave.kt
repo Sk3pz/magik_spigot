@@ -9,10 +9,11 @@ class EventPlayerLeave(val magik: Magik) : CoreEvent(magik) {
 
     @EventHandler
     fun onLeave(event: PlayerQuitEvent) {
-        val player = event.player
 
-        magik.userFiles.remove(player.uniqueId)
-        val race = magik.players[player.uniqueId] ?: return
-        race.remove(player)
+        val player = event.player
+        val uuid = player.uniqueId
+
+        magik.userFiles.remove(uuid)
+        magik.players[uuid]?.remove(player)
     }
 }
