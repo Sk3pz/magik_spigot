@@ -4,12 +4,9 @@ import es.skepz.magik.Magik
 import es.skepz.magik.tuodlib.colorize
 import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
-import org.bukkit.GameMode
 import org.bukkit.entity.Player
 import org.bukkit.event.Listener
-import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.ItemStack
-import kotlin.collections.ArrayList
 
 fun start(magik: Magik) {
     val scheduler = Bukkit.getScheduler()
@@ -27,20 +24,11 @@ fun start(magik: Magik) {
 }
 
 fun raceFromName(magik: Magik, name: String): Race? {
-    for (r in magik.races) {
-        if (r.name() == name) {
-            return r
-        }
-    }
-    return null
+    return magik.races.find { it.name() == name }
 }
 
-fun getRaceNames(magik: Magik): ArrayList<String> {
-    val list = ArrayList<String>()
-    for (r in magik.races) {
-        list.add(r.name())
-    }
-    return list
+fun getRaceNames(magik: Magik): List<String> {
+    return magik.races.map { it.name() }
 }
 
 fun setRace(magik: Magik, player: Player, race: Race) {
@@ -65,8 +53,10 @@ fun createInventory(magik: Magik, p: Player) {
 }
 
 abstract class Race(val magik: Magik) : Listener {
+
     // registers the race
     fun register() {
+
         magik.config.default("enabled_races.${name()}", true)
 
         if (magik.config.cfg.getBoolean("enabled_races.${name()}")) {
@@ -89,4 +79,5 @@ abstract class Race(val magik: Magik) : Listener {
 
     // run when the user changes to a different race
     abstract fun remove(player: Player)
+
 }

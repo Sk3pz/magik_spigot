@@ -17,15 +17,16 @@ import kotlin.collections.HashMap
 
 class Magik : JavaPlugin() {
 
-    val userFiles = HashMap<UUID, UserFile>()
+    val userFiles = mutableMapOf<UUID, UserFile>()
     var config = CFGFile(this, "config", "")
 
-    val races = ArrayList<Race>()
-    val players = HashMap<UUID, Race>()
-    val inventories = ArrayList<Inventory>()
-    val raceItems = ArrayList<ItemStack>()
+    val races = mutableListOf<Race>()
+    val players = mutableMapOf<UUID, Race>()
+    val inventories = mutableListOf<Inventory>()
+    val raceItems = mutableListOf<ItemStack>()
 
     override fun onEnable() {
+
         // commands
         MagikCommand(this).register()
 
@@ -42,31 +43,35 @@ class Magik : JavaPlugin() {
         Human(this).register()
         Orc(this).register()
 
-        for (r in races) {
-            raceItems.add(r.guiDisplayItem())
+        races.forEach {
+            raceItems.add(it.guiDisplayItem())
         }
 
         // start the subsystems for handling the races
         start(this)
 
-        for (p in Bukkit.getOnlinePlayers()) {
-            val file = UserFile(this, p)
-            userFiles[p.uniqueId] = file
+        server.onlinePlayers.forEach { player ->
+
+            val file = UserFile(this, player)
+            userFiles[player.uniqueId] = file
+
             val race = file.getRace()
             if (race == null) {
                 // TODO: Race selection here
-                continue
+                return@forEach
             }
 
-            setRace(this, p, race)
+            setRace(this, player, race)
         }
+
     }
 
     override fun onDisable() {
-        for (p in Bukkit.getOnlinePlayers()) {
-            val race = players[p.uniqueId] ?: continue
-            race.remove(p)
+
+        server.onlinePlayers.forEach {
+            players[it.uniqueId]?.remove(it)
         }
+
         // todo: possible edge case if player has selection inventory open on reload run
     }
 

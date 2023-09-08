@@ -16,13 +16,15 @@ class Human(magik: Magik) : Race(magik) {
     }
 
     override fun guiDisplayItem(): ItemStack {
+
         val item = ItemStack(Material.ELYTRA, 1)
-        val meta = item.itemMeta
-        meta.isUnbreakable = true
-        meta.displayName(Component.text(colorize("&7&lHuman")))
-        meta.lore(listOf(
-            Component.text(colorize("&7- No buffs or debuffs"))))
-        item.setItemMeta(meta)
+
+        item.itemMeta = item.itemMeta.also {
+            it.isUnbreakable = true
+            it.displayName(Component.text(colorize("&7&lHuman")))
+            it.lore(listOf(
+                Component.text(colorize("&7- No buffs or debuffs"))))
+        }
 
         return item
     }

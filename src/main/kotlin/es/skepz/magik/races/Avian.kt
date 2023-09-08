@@ -27,46 +27,55 @@ class Avian(magik: Magik) : Race(magik) {
     private val maxHealth = 12.0
     private val wingsName = "&fAvian Wings"
     private val fireworkName = "&cInfinite Firework"
-
     private val elytra = ItemStack(Material.ELYTRA, 1)
     private val firework = ItemStack(Material.FIREWORK_ROCKET, 1)
 
     init {
-        val emeta = elytra.itemMeta
-        emeta.isUnbreakable = true
-        emeta.displayName(Component.text(colorize(wingsName)))
-        emeta.lore(listOf(Component.text(colorize("&6Allows avians to fly"))))
-        elytra.setItemMeta(emeta)
 
-        val fmeta = firework.itemMeta as FireworkMeta
-        fmeta.displayName(Component.text(colorize(fireworkName)))
-        fmeta.lore(listOf(Component.text(colorize("&6Allows avians to fly"))))
-        fmeta.power = 1
-        firework.setItemMeta(fmeta)
+        elytra.itemMeta = elytra.itemMeta.also {
+            it.isUnbreakable = true
+            it.displayName(Component.text(colorize(wingsName)))
+            it.lore(listOf(Component.text(colorize("&6Allows avians to fly"))))
+        }
+
+        firework.itemMeta = (firework.itemMeta as FireworkMeta).also {
+            it.displayName(Component.text(colorize(fireworkName)))
+            it.lore(listOf(Component.text(colorize("&6Allows avians to fly"))))
+            it.power = 1
+        }
     }
 
     override fun update(player: Player) {
+
         if (!player.isSneaking) {
             player.addPotionEffect(PotionEffect(PotionEffectType.JUMP, 2, 1, false, false))
         }
+
         if (player.isOnGround || player.isSleeping || player.isSwimming) {
             player.addPotionEffect(PotionEffect(PotionEffectType.SLOW, 2, 1, false, false))
         }
     }
 
     override fun guiDisplayItem(): ItemStack {
+
         val item = ItemStack(Material.ELYTRA, 1)
         val meta = item.itemMeta
-        meta.isUnbreakable = true
-        meta.displayName(Component.text(colorize("&6&lAvian")))
-        meta.lore(listOf(Component.text(colorize("&7- &aPermanent elytra")),
-                         Component.text(colorize("&7- &aInfinite firework")),
-                         Component.text(colorize("&7- &aJump boost")),
-                         Component.text(colorize("&7- &aImmune to fall damage")), // todo maybe reduced fall damage?
-                         Component.text(colorize("&7- &cSlowness when on ground")),
-                         Component.text(colorize("&7- &cCan only wear leather and chainmail armor")),
-                         Component.text(colorize("&7- &c-4 max hearts"))))
-        item.setItemMeta(meta)
+
+        item.itemMeta = item.itemMeta.also {
+            meta.isUnbreakable = true
+            meta.displayName(Component.text(colorize("&6&lAvian")))
+            meta.lore(
+                listOf(
+                    "&7- &aPermanent elytra",
+                    "&7- &aInfinite firework",
+                    "&7- &aJump boost",
+                    "&7- &aImmune to fall damage", // todo maybe reduced fall damage?
+                    "&7- &cSlowness when on ground",
+                    "&7- &cCan only wear leather and chainmail armor",
+                    "&7- &c-4 max hearts"
+                ).map { Component.text(colorize(it)) }
+            )
+        }
 
         return item
     }
@@ -84,45 +93,52 @@ class Avian(magik: Magik) : Race(magik) {
     }
 
     override fun set(player: Player) {
-        if (!player.inventory.contains(firework)) {
-            player.inventory.addItem(firework)
+
+        val inventory = player.inventory
+
+        if (!inventory.contains(firework)) {
+            inventory.addItem(firework)
         }
 
         // handle armor
-        val helm = player.inventory.helmet
-        val ches = player.inventory.chestplate
-        val legg = player.inventory.leggings
-        val boot = player.inventory.boots
+        val helm = inventory.helmet
+        val ches = inventory.chestplate
+        val legg = inventory.leggings
+        val boot = inventory.boots
 
         if (helm != null && isHeavyArmor(helm)) {
-            player.inventory.addItem(helm)
-            player.inventory.helmet = ItemStack(Material.AIR)
+            inventory.addItem(helm)
+            inventory.helmet = ItemStack(Material.AIR)
         }
+
         if (ches != null && !checkElytra(ches)) {
-            player.inventory.addItem(ches)
+            inventory.addItem(ches)
         }
-        player.inventory.chestplate = elytra
+
+        inventory.chestplate = elytra
         if (legg != null && isHeavyArmor(legg)) {
-            player.inventory.addItem(legg)
-            player.inventory.leggings = ItemStack(Material.AIR)
+            inventory.addItem(legg)
+            inventory.leggings = ItemStack(Material.AIR)
         }
         if (boot != null && isHeavyArmor(boot)) {
-            player.inventory.addItem(boot)
-            player.inventory.boots = ItemStack(Material.AIR)
+            inventory.addItem(boot)
+            inventory.boots = ItemStack(Material.AIR)
         }
 
         player.maxHealth = maxHealth
     }
 
     override fun remove(player: Player) {
-        player.maxHealth = 20.0
-        player.inventory.chestplate = ItemStack(Material.AIR)
-        player.inventory.remove(firework)
+
+        val inventory = player.inventory
+
+        player.resetMaxHealth()
+        inventory.chestplate = ItemStack(Material.AIR)
+        inventory.remove(firework)
     }
 
     private fun isAvian(p: Player): Boolean {
-        val race = getRace(magik, p)
-        return race != null && race is Avian
+        return getRace(magik, p) is Avian
     }
 
     private fun isHeavyArmor(item: ItemStack): Boolean {
@@ -138,55 +154,61 @@ class Avian(magik: Magik) : Race(magik) {
 
     @EventHandler
     fun onPlayerInteract(event: PlayerInteractEvent) {
-        val p = event.player
-        if (!isAvian(p)) {
+
+        val item = event.item
+            ?: return
+
+        val player = event.player
+        if (!isAvian(player)) {
             return
         }
-        val item = event.item ?: return
+
         // check if the item is armor
         if (isHeavyArmor(item) && (event.action == Action.RIGHT_CLICK_AIR || event.action == Action.RIGHT_CLICK_BLOCK)) {
             event.isCancelled = true
-            sendMessage(p, "&cAvians can only wear leather or chainmail armor!")
-            playSound(p, Sound.BLOCK_NOTE_BLOCK_BASS, 1, 0.1f)
+            sendMessage(player, "&cAvians can only wear leather or chainmail armor!")
+            playSound(player, Sound.BLOCK_NOTE_BLOCK_BASS, 1, 0.1f)
             return
         }
 
         if ((item.type == Material.LEATHER_CHESTPLATE || item.type == Material.CHAINMAIL_CHESTPLATE || item.type == Material.ELYTRA)
             && (event.action == Action.RIGHT_CLICK_AIR || event.action == Action.RIGHT_CLICK_BLOCK)) {
             event.isCancelled = true
-            playSound(p, Sound.BLOCK_NOTE_BLOCK_BASS, 1, 0.1f)
+            playSound(player, Sound.BLOCK_NOTE_BLOCK_BASS, 1, 0.1f)
             return
         }
 
         // check if item is the special firework
         if (checkFirework(item) && (event.action != Action.RIGHT_CLICK_AIR)) {
-            if (p.gameMode == GameMode.CREATIVE) {
-                return
+            if (player.gameMode != GameMode.CREATIVE) {
+                event.isCancelled = true
             }
-            event.isCancelled = true
         }
     }
 
     @EventHandler
     fun onBoost(event: PlayerElytraBoostEvent) {
-        val p = event.player
-        if (!isAvian(p)) {
+
+        val player = event.player
+        if (!isAvian(player)) {
             return
         }
-        if (p.gameMode == GameMode.CREATIVE) {
+
+        if (player.gameMode == GameMode.CREATIVE) {
             return
         }
 
         if (checkFirework(event.firework.item)) {
-            p.inventory.remove(firework)
-            p.inventory.addItem(firework)
+            player.inventory.remove(firework)
+            player.inventory.addItem(firework)
         }
     }
 
     @EventHandler
     fun onInventoryClick(event: InventoryClickEvent) {
-        val p = event.whoClicked as Player
-        if (!isAvian(p)) {
+
+        val player = event.whoClicked as Player
+        if (!isAvian(player)) {
             return
         }
 
@@ -195,8 +217,8 @@ class Avian(magik: Magik) : Race(magik) {
         if (event.click.isShiftClick && (event.inventory.type == CRAFTING)) {
             if (current != null && isHeavyArmor(current)) {
                 event.isCancelled = true
-                sendMessage(p, "&cAvians can only wear leather or chainmail armor!")
-                playSound(p, Sound.BLOCK_NOTE_BLOCK_BASS, 1, 0.1f)
+                sendMessage(player, "&cAvians can only wear leather or chainmail armor!")
+                playSound(player, Sound.BLOCK_NOTE_BLOCK_BASS, 1, 0.1f)
                 return
             }
         }
@@ -204,48 +226,52 @@ class Avian(magik: Magik) : Race(magik) {
         if (event.slotType != SlotType.ARMOR) {
             return
         }
+
         if (current?.type == Material.ELYTRA) {
             event.isCancelled = true
-            playSound(p, Sound.BLOCK_NOTE_BLOCK_BASS, 1, 0.1f)
+            playSound(player, Sound.BLOCK_NOTE_BLOCK_BASS, 1, 0.1f)
             return
         }
+
         val cursor = event.cursor
         if (cursor != null && isHeavyArmor(cursor)) {
             event.isCancelled = true
-            sendMessage(p, "&cAvians can only wear leather or chainmail armor!")
-            playSound(p, Sound.BLOCK_NOTE_BLOCK_BASS, 1, 0.1f)
+            sendMessage(player, "&cAvians can only wear leather or chainmail armor!")
+            playSound(player, Sound.BLOCK_NOTE_BLOCK_BASS, 1, 0.1f)
             return
         }
     }
 
     @EventHandler
     fun onPlayerFall(event: EntityDamageEvent) {
+
         if (event.entity !is Player || event.cause != EntityDamageEvent.DamageCause.FALL) {
             return
         }
-        val p = event.entity as Player
-        if (isAvian(p)) {
+
+        if (isAvian(event.entity as Player)) {
             event.isCancelled = true
         }
     }
 
     @EventHandler
     fun itemDrop(event: PlayerDropItemEvent) {
-        val p = event.player
-        if (!isAvian(p)) {
+
+        val player = event.player
+        if (!isAvian(player)) {
             return
         }
-        val item = event.itemDrop.itemStack
-        if (checkFirework(item)) {
+
+        if (checkFirework(event.itemDrop.itemStack)) {
             event.isCancelled = true
-            playSound(p, Sound.BLOCK_NOTE_BLOCK_BASS, 1, 0.1f)
+            playSound(player, Sound.BLOCK_NOTE_BLOCK_BASS, 1, 0.1f)
         }
     }
 
     @EventHandler
     fun onDeath(event: PlayerDeathEvent) {
-        val p = event.player
-        if (!isAvian(p)) {
+
+        if (!isAvian(event.player)) {
             return
         }
 
@@ -255,11 +281,12 @@ class Avian(magik: Magik) : Race(magik) {
 
     @EventHandler
     fun onRespawn(event: PlayerRespawnEvent) {
-        val p = event.player
-        if (!isAvian(p)) {
+
+        val player = event.player
+        if (!isAvian(player)) {
             return
         }
 
-        setRace(magik, p, this)
+        setRace(magik, player, this)
     }
 }
