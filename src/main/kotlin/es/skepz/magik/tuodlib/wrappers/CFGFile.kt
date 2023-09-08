@@ -1,5 +1,6 @@
 package es.skepz.magik.tuodlib.wrappers
 
+import es.skepz.magik.Magik
 import org.bukkit.configuration.file.FileConfiguration
 import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.plugin.java.JavaPlugin
@@ -10,7 +11,7 @@ import java.io.File
  * @param fileName the name of the file (automatically adds .yml)
  * @param folder the folder which the config should be held in (empty if in data folder)
  */
-open class CFGFile(val plugin: JavaPlugin, private val fileName: String, folder: String) {
+open class CFGFile(val plugin: Magik, private val fileName: String, folder: String) {
 
     var cfg: FileConfiguration
         private set

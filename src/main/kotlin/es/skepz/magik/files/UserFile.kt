@@ -6,7 +6,7 @@ import es.skepz.magik.races.Race
 import es.skepz.magik.races.raceFromName
 import es.skepz.magik.tuodlib.wrappers.CFGFile
 
-class UserFile(private val plugin: Magik, player: Player) : CFGFile(plugin, player.uniqueId.toString(), "users") {
+class UserFile(plugin: Magik, player: Player) : CFGFile(plugin, player.uniqueId.toString(), "users") {
 
     init {
         set("name", player.name)
