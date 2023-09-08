@@ -2,12 +2,11 @@ package es.skepz.magik.commands
 
 import es.skepz.magik.Magik
 import es.skepz.magik.races.*
-import org.bukkit.Bukkit
-import org.bukkit.command.CommandSender
 import es.skepz.magik.tuodlib.sendMessage
 import es.skepz.magik.tuodlib.wrappers.CoreCMD
+import org.bukkit.Bukkit
+import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
-import java.util.ArrayList
 
 class MagikCommand(val magik: Magik) : CoreCMD(magik, "magik", "&c/magik <&7set&c|&7check&c|&7inv&c>",
     1, "magik.set_race", true, true) {

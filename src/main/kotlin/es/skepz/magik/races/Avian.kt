@@ -2,7 +2,9 @@ package es.skepz.magik.races
 
 import com.destroystokyo.paper.event.player.PlayerElytraBoostEvent
 import es.skepz.magik.Magik
-import es.skepz.magik.tuodlib.*
+import es.skepz.magik.tuodlib.colorize
+import es.skepz.magik.tuodlib.playSound
+import es.skepz.magik.tuodlib.sendMessage
 import net.kyori.adventure.text.Component
 import org.bukkit.GameMode
 import org.bukkit.Material
@@ -13,7 +15,8 @@ import org.bukkit.event.block.Action
 import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.inventory.InventoryClickEvent
-import org.bukkit.event.inventory.InventoryType.*
+import org.bukkit.event.inventory.InventoryType.CRAFTING
+import org.bukkit.event.inventory.InventoryType.SlotType
 import org.bukkit.event.player.PlayerDropItemEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerRespawnEvent

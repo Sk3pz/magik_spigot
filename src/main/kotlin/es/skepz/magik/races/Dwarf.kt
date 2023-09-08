@@ -1,20 +1,19 @@
 package es.skepz.magik.races
 
 import es.skepz.magik.Magik
+import es.skepz.magik.tuodlib.colorize
+import es.skepz.magik.tuodlib.sendMessage
 import net.kyori.adventure.text.Component
 import org.bukkit.Material
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
-import org.bukkit.event.player.PlayerInteractEvent
-import org.bukkit.inventory.ItemStack
-import es.skepz.magik.tuodlib.colorize
-import es.skepz.magik.tuodlib.sendMessage
 import org.bukkit.event.block.Action
 import org.bukkit.event.block.BlockBreakEvent
+import org.bukkit.event.player.PlayerInteractEvent
+import org.bukkit.inventory.ItemStack
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 import java.util.*
-import kotlin.collections.HashMap
 
 class Dwarf(magik: Magik) : Race(magik) {
 

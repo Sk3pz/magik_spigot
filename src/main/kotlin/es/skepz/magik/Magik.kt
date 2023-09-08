@@ -7,13 +7,10 @@ import es.skepz.magik.events.EventPlayerLeave
 import es.skepz.magik.files.UserFile
 import es.skepz.magik.races.*
 import es.skepz.magik.tuodlib.wrappers.CFGFile
-import org.bukkit.Bukkit
 import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.ItemStack
 import org.bukkit.plugin.java.JavaPlugin
 import java.util.*
-import kotlin.collections.ArrayList
-import kotlin.collections.HashMap
 
 class Magik : JavaPlugin() {
 
