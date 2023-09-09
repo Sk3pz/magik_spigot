@@ -37,7 +37,7 @@ class Dwarf(magik: Magik) : Race(magik) {
 
     private val maxHealth = 24.0
 
-    val veinmineMax = magik.config.cfg.getInt("misc.dwarf_max_vein_mine")
+    val veinMineMax = magik.config.cfg.getInt("misc.dwarf_max_vein_mine")
 
     override fun update(player: Player) {
         player.addPotionEffect(PotionEffect(PotionEffectType.SLOW, 2, 0, false, false))
@@ -182,25 +182,43 @@ class Dwarf(magik: Magik) : Race(magik) {
         }
     }
 
-    private fun recursiveBlockBreak(block: Block, type: Material, dropLocation: Location, current: Int) {
-        if (current == veinmineMax) {
-            return
-        }
+    private fun vineBlockBreak(startBlock: Block, type: Material, dropLocation: Location) {
 
-        // break the block and handle drops
-        if (block.type == type) {
+        val stack = LinkedList<Block>()
+        val iterator = stack.iterator()
+        var count = 0
+
+        stack.add(startBlock)
+
+        while (count < veinMineMax && iterator.hasNext()) {
+
+            val block = iterator.next()
+            iterator.remove()
+
+            count++
+
+            if (block.type != type) {
+                continue
+            }
+
+            // break the block and handle drops
             block.drops.forEach {
                 dropItem(dropLocation, it)
             }
-            block.type = Material.AIR
-        }
 
-        // handle surrounding drops
-        for (x in -1..1) {
-            for (y in -1..1) {
-                for (z in -1..1) {
-                    val b = block.location.world.getBlockAt(x, y, z)
-                    recursiveBlockBreak(b, type, dropLocation, current + 1)
+            block.type = Material.AIR
+
+            // handle surrounding drops
+            for (x in -1..1) {
+                for (y in -1..1) {
+                    for (z in -1..1) {
+
+                        val relativeBlock = block.getRelative(x, y, z)
+
+                        if (relativeBlock.type == type) {
+                            stack.add(relativeBlock)
+                        }
+                    }
                 }
             }
         }
@@ -219,7 +237,7 @@ class Dwarf(magik: Magik) : Race(magik) {
             PickaxeMode.Vein -> {
                 // TODO
                 event.isDropItems = false
-                recursiveBlockBreak(block, block.type, block.location.add(0.5, 0.5, 0.5), 0)
+                vineBlockBreak(block, block.type, block.location.add(0.5, 0.5, 0.5))
             }
             PickaxeMode.Smelt -> {
                 // iron, gold, copper

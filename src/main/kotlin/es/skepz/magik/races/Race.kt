@@ -11,8 +11,7 @@ import org.bukkit.inventory.ItemStack
 import org.bukkit.persistence.PersistentDataType
 
 fun start(magik: Magik) {
-    val scheduler = Bukkit.getScheduler()
-    scheduler.runTaskTimer(magik, Runnable {
+    Bukkit.getScheduler().runTaskTimer(magik, Runnable {
         for ((u, r) in magik.players) {
             val player = Bukkit.getPlayer(u)
             if (player == null) {
