@@ -237,7 +237,9 @@ class Dwarf(magik: Magik) : Race(magik) {
             PickaxeMode.Vein -> {
                 // TODO
                 event.isDropItems = false
-                vineBlockBreak(block, block.type, block.location.add(0.5, 0.5, 0.5))
+                magik.server.scheduler.runTask(magik, Runnable {
+                    vineBlockBreak(block, block.type, block.location.add(0.5, 0.5, 0.5))
+                })
             }
             PickaxeMode.Smelt -> {
                 // iron, gold, copper
