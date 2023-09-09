@@ -184,15 +184,14 @@ class Dwarf(magik: Magik) : Race(magik) {
 
     private fun vineBlockBreak(startBlock: Block, type: Material, dropLocation: Location) {
         val stack = LinkedList<Block>()
-        val iterator = stack.iterator()
         var count = 0
 
         stack.add(startBlock)
 
-        while (count < veinMineMax && iterator.hasNext()) {
+        while (count < veinMineMax) {
 
-            val block = iterator.next()
-            iterator.remove()
+            val block = stack.poll()
+                ?: break
 
             count++
 
@@ -234,9 +233,7 @@ class Dwarf(magik: Magik) : Race(magik) {
         when (getMode(player)) {
             PickaxeMode.Vein -> {
                 event.isDropItems = false
-                magik.server.scheduler.runTask(magik, Runnable {
-                    vineBlockBreak(block, block.type, block.location.add(0.5, 0.5, 0.5))
-                })
+                vineBlockBreak(block, block.type, block.location.add(0.5, 0.5, 0.5))
             }
             PickaxeMode.Smelt -> {
                 // iron, gold, copper
