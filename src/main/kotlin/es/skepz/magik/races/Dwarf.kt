@@ -183,7 +183,6 @@ class Dwarf(magik: Magik) : Race(magik) {
     }
 
     private fun vineBlockBreak(startBlock: Block, type: Material, dropLocation: Location) {
-
         val stack = LinkedList<Block>()
         val iterator = stack.iterator()
         var count = 0
@@ -212,7 +211,6 @@ class Dwarf(magik: Magik) : Race(magik) {
             for (x in -1..1) {
                 for (y in -1..1) {
                     for (z in -1..1) {
-
                         val relativeBlock = block.getRelative(x, y, z)
 
                         if (relativeBlock.type == type) {
@@ -235,7 +233,6 @@ class Dwarf(magik: Magik) : Race(magik) {
 
         when (getMode(player)) {
             PickaxeMode.Vein -> {
-                // TODO
                 event.isDropItems = false
                 magik.server.scheduler.runTask(magik, Runnable {
                     vineBlockBreak(block, block.type, block.location.add(0.5, 0.5, 0.5))
@@ -264,6 +261,10 @@ class Dwarf(magik: Magik) : Race(magik) {
                     Material.DEEPSLATE -> {
                         event.isDropItems = false
                         dropItem(dropLoc, ItemStack(Material.DEEPSLATE))
+                    }
+                    Material.NETHERRACK -> {
+                        event.isDropItems = false
+                        dropItem(dropLoc, ItemStack(Material.NETHER_BRICK))
                     }
                     else -> {}
                 }
