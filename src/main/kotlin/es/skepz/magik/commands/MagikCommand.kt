@@ -61,10 +61,8 @@ class MagikCommand(val magik: Magik) : CoreCMD(magik, "magik", "&c/magik <&7set&
     }
 
     override fun registerTabComplete(sender: CommandSender, args: Array<String>): List<String> {
-
         if (
-            args.size == 2 && !args[0].equals("inv", true) ||
-            args.size == 3 && !args[0].equals("set", true)
+            args.size == 3 && args[0].equals("check", true)
         ) {
             return emptyList()
         }

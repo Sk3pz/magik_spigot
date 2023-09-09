@@ -46,7 +46,6 @@ abstract class CoreCMD protected constructor(
     }
 
     fun Context.requirePlayer(): Boolean {
-
         if (sender !is Player) {
             notPlayer(sender)
         }
@@ -63,7 +62,7 @@ abstract class CoreCMD protected constructor(
             return true
         }
 
-        if (onlyPlayer && sender is Player) { // if command requires sender to be a player, run the check
+        if (onlyPlayer && sender !is Player) { // if command requires sender to be a player, run the check
             requirePlayer(sender)
             return true
         }

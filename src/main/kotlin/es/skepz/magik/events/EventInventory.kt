@@ -18,7 +18,7 @@ class EventInventory(val magik: Magik) : CoreEvent(magik) {
     fun onClick(event: InventoryClickEvent) {
 
         val p = event.whoClicked as Player
-        val inv = event.clickedInventory?.takeIf { !checkInventory(it) } ?: return
+        val inv = event.clickedInventory?.takeIf { checkInventory(it) } ?: return
 
         event.isCancelled = true // cancel all inventory clicks in the custom gui
 

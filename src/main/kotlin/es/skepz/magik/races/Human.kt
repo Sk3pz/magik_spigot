@@ -17,7 +17,7 @@ class Human(magik: Magik) : Race(magik) {
 
     override fun guiDisplayItem(): ItemStack {
 
-        val item = ItemStack(Material.ELYTRA, 1)
+        val item = ItemStack(Material.PLAYER_HEAD, 1)
 
         item.itemMeta = item.itemMeta.also {
             it.isUnbreakable = true

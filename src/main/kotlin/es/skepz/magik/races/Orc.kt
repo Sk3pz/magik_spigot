@@ -23,6 +23,7 @@ class Orc(magik: Magik) : Race(magik) {
             it.isUnbreakable = true
             it.displayName(Component.text(colorize("&4&lOrc")))
             it.lore(listOf(
+                Component.text(colorize("&c&lCOMING SOON")),
                 Component.text(colorize("&7- &aBattle Axe - more damage, slower speed")),
                 Component.text(colorize("&7- &aJump boost")),
                 Component.text(colorize("&7- &aStrength")),

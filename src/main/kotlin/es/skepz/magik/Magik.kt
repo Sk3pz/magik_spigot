@@ -32,13 +32,16 @@ class Magik : JavaPlugin() {
         EventPlayerLeave(this).register()
         EventInventory(this).register()
 
+        // config defaults
+        config.default("misc.dwarf_max_vein_mine", 5)
+
         // races
         Avian(this).register()
         Druid(this).register()
         Dwarf(this).register()
         Elf(this).register()
-        Human(this).register()
         Orc(this).register()
+        Human(this).register()
 
         races.forEach {
             raceItems.add(it.guiDisplayItem())

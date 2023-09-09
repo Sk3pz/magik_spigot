@@ -34,7 +34,6 @@ class Avian(magik: Magik) : Race(magik) {
     private val firework = ItemStack(Material.FIREWORK_ROCKET, 1)
 
     init {
-
         elytra.itemMeta = elytra.itemMeta.also {
             it.isUnbreakable = true
             it.displayName(Component.text(colorize(wingsName)))
@@ -49,9 +48,8 @@ class Avian(magik: Magik) : Race(magik) {
     }
 
     override fun update(player: Player) {
-
         if (!player.isSneaking) {
-            player.addPotionEffect(PotionEffect(PotionEffectType.JUMP, 2, 1, false, false))
+            player.addPotionEffect(PotionEffect(PotionEffectType.JUMP, 2, 0, false, false))
         }
 
         if (player.isOnGround || player.isSleeping || player.isSwimming) {
@@ -60,11 +58,8 @@ class Avian(magik: Magik) : Race(magik) {
     }
 
     override fun guiDisplayItem(): ItemStack {
-
         val item = ItemStack(Material.ELYTRA, 1)
-        val meta = item.itemMeta
-
-        item.itemMeta = item.itemMeta.also {
+        item.itemMeta = item.itemMeta.also { meta ->
             meta.isUnbreakable = true
             meta.displayName(Component.text(colorize("&6&lAvian")))
             meta.lore(
@@ -96,7 +91,6 @@ class Avian(magik: Magik) : Race(magik) {
     }
 
     override fun set(player: Player) {
-
         val inventory = player.inventory
 
         if (!inventory.contains(firework)) {
@@ -132,7 +126,6 @@ class Avian(magik: Magik) : Race(magik) {
     }
 
     override fun remove(player: Player) {
-
         val inventory = player.inventory
 
         player.resetMaxHealth()
@@ -157,7 +150,6 @@ class Avian(magik: Magik) : Race(magik) {
 
     @EventHandler
     fun onPlayerInteract(event: PlayerInteractEvent) {
-
         val item = event.item
             ?: return
 
@@ -191,7 +183,6 @@ class Avian(magik: Magik) : Race(magik) {
 
     @EventHandler
     fun onBoost(event: PlayerElytraBoostEvent) {
-
         val player = event.player
         if (!isAvian(player)) {
             return
@@ -209,7 +200,6 @@ class Avian(magik: Magik) : Race(magik) {
 
     @EventHandler
     fun onInventoryClick(event: InventoryClickEvent) {
-
         val player = event.whoClicked as Player
         if (!isAvian(player)) {
             return
@@ -247,7 +237,6 @@ class Avian(magik: Magik) : Race(magik) {
 
     @EventHandler
     fun onPlayerFall(event: EntityDamageEvent) {
-
         if (event.entity !is Player || event.cause != EntityDamageEvent.DamageCause.FALL) {
             return
         }
@@ -259,7 +248,6 @@ class Avian(magik: Magik) : Race(magik) {
 
     @EventHandler
     fun itemDrop(event: PlayerDropItemEvent) {
-
         val player = event.player
         if (!isAvian(player)) {
             return
@@ -273,7 +261,6 @@ class Avian(magik: Magik) : Race(magik) {
 
     @EventHandler
     fun onDeath(event: PlayerDeathEvent) {
-
         if (!isAvian(event.player)) {
             return
         }
@@ -284,7 +271,6 @@ class Avian(magik: Magik) : Race(magik) {
 
     @EventHandler
     fun onRespawn(event: PlayerRespawnEvent) {
-
         val player = event.player
         if (!isAvian(player)) {
             return

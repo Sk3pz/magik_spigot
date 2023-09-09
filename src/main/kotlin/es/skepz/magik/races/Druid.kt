@@ -27,7 +27,7 @@ import kotlin.math.min
 
 class Druid(magik: Magik) : Race(magik) {
 
-    private val maxHealth = 18.0
+    private val maxHealth = 16.0
     private val stick = ItemStack(Material.STICK, 1)
     private val stickName = "&aStick of Life"
 
@@ -39,26 +39,24 @@ class Druid(magik: Magik) : Race(magik) {
     }
 
     override fun update(player: Player) {
-
-        player.addPotionEffect(PotionEffect(PotionEffectType.SPEED, 2, 1, false, false))
+        player.addPotionEffect(PotionEffect(PotionEffectType.SPEED, 2, 0, false, false))
 
         val loc = player.location
         val below = Location(loc.world, loc.x, loc.y - 1, loc.z)
 
         if (below.block.type == Material.GRASS_BLOCK) {
-            player.addPotionEffect(PotionEffect(PotionEffectType.REGENERATION, 2, 2, false, false))
+            player.addPotionEffect(PotionEffect(PotionEffectType.REGENERATION, 2, 1, false, false))
         }
 
         if (loc.world.environment == World.Environment.NETHER || loc.world.environment == World.Environment.THE_END) {
             player.maxHealth = maxHealth - 2.0
         }
         else {
-            player.resetMaxHealth()
+            player.maxHealth = maxHealth
         }
     }
 
     override fun guiDisplayItem(): ItemStack {
-
         val item = ItemStack(Material.OAK_SAPLING, 1)
 
         item.itemMeta = item.itemMeta.also {
@@ -101,10 +99,10 @@ class Druid(magik: Magik) : Race(magik) {
 
     override fun remove(player: Player) {
         player.inventory.remove(stick)
+        player.resetMaxHealth()
     }
 
     private fun handleDrops(block: Block, harvestItem: ItemStack?) {
-
         var enchLevel = 0
 
         if (harvestItem != null && harvestItem.hasItemMeta()) {
@@ -112,7 +110,7 @@ class Druid(magik: Magik) : Race(magik) {
             val meta = harvestItem.itemMeta
 
             if (meta.hasEnchant(Enchantment.LOOT_BONUS_BLOCKS)) {
-	            enchLevel += i.getEnchantmentLevel(Enchantment.LOOT_BONUS_BLOCKS)
+	            enchLevel += harvestItem.getEnchantmentLevel(Enchantment.LOOT_BONUS_BLOCKS)
             }
         }
 
@@ -122,7 +120,7 @@ class Druid(magik: Magik) : Race(magik) {
         when (block.type) {
 
             Material.WHEAT -> {
-                dropItem(blockLocation, ItemStack(Material.WHEAT, 1 * random(1, multiplier))
+                dropItem(blockLocation, ItemStack(Material.WHEAT, 1 * random(1, multiplier)))
                 dropItem(blockLocation, ItemStack(Material.WHEAT_SEEDS, random(1, 4) * multiplier))
             }
 
@@ -148,7 +146,6 @@ class Druid(magik: Magik) : Race(magik) {
     }
 
     private fun harvest(block: Block, harvestItem: ItemStack?): Boolean {
-
         when (block.type) {
 
             Material.WHEAT, Material.CARROTS, Material.POTATOES, Material.BEETROOTS, Material.COCOA -> {
@@ -169,7 +166,6 @@ class Druid(magik: Magik) : Race(magik) {
 
     @EventHandler
     fun onPlayerInteract(event: PlayerInteractEvent) {
-
         val player = event.player.takeIf { it.isDruid() }
             ?: return
 
@@ -204,7 +200,6 @@ class Druid(magik: Magik) : Race(magik) {
 
     @EventHandler(ignoreCancelled = true)
     fun onBreak(event: BlockBreakEvent) {
-
         val player = event.player.takeIf { it.isDruid() }
             ?: return
 
@@ -219,21 +214,18 @@ class Druid(magik: Magik) : Race(magik) {
 
     @EventHandler
     fun onAttack(event: EntityDamageByEntityEvent) {
-
-        /*
         val player = (event.entity as? Player)?.takeIf { it.isDruid() }
             ?: return
-        */
 
         val attacker = event.damager as? LivingEntity
             ?: return
 
         attacker.addPotionEffect(PotionEffect(PotionEffectType.POISON, 5 * 20, 1))
+        displayParticles(player.location, Particle.VILLAGER_HAPPY, 20, 1.0, 2.0, 1.0)
     }
 
     @EventHandler
     fun itemDrop(event: PlayerDropItemEvent) {
-
         val player = event.player.takeIf { it.isDruid() }
             ?: return
 
@@ -245,7 +237,6 @@ class Druid(magik: Magik) : Race(magik) {
 
     @EventHandler
     fun onClick(event: InventoryClickEvent) {
-		
 	    val player = (event.whoClicked as? Player)?.takeIf { it.isDruid() }
 		    ?: return
 	    
@@ -260,12 +251,7 @@ class Druid(magik: Magik) : Race(magik) {
 
     @EventHandler
     fun onDeath(event: PlayerDeathEvent) {
-
-        /*
-        val player = event.player.takeIf { it.isDruid() }
-            ?: return
-        */
-
+        if (!event.player.isDruid()) return
         event.drops.remove(stick)
     }
 

@@ -23,6 +23,7 @@ class Elf(magik: Magik) : Race(magik) {
             it.isUnbreakable = true
             it.displayName(Component.text(colorize("&2&lElf")))
             it.lore(listOf(
+                Component.text(colorize("&c&lCOMING SOON")),
                 Component.text(colorize("&7- &aLongbow: Shoots more powerful arrows")),
                 Component.text(colorize("&7- &aIncreased speed")),
                 Component.text(colorize("&7- &aJump boost")),
