@@ -18,11 +18,8 @@ class MagikCommand(val magik: Magik) : CoreCMD(magik, "magik", "&c/magik <&7set&
         when (args[0].lowercase()) {
 
             "set" -> {
-
-                val race = raceFromName(magik, args[2])
-                if (race == null || args.size < 3) {
-                    return invalidUse()
-                }
+                if (args.size < 3) return invalidUse()
+                val race = raceFromName(magik, args[2]) ?: return sendMessage(sender, "&cInvalid race!")
 
                 val t = Bukkit.getPlayer(args[1])
                     ?: return sendMessage(sender, "&cThat player either isn't online or doesn't exist!")
@@ -32,7 +29,6 @@ class MagikCommand(val magik: Magik) : CoreCMD(magik, "magik", "&c/magik <&7set&
             }
 
             "inv" -> {
-
                 if (args.size < 2) {
                     return createInventory(magik, player)
                 }
@@ -41,10 +37,10 @@ class MagikCommand(val magik: Magik) : CoreCMD(magik, "magik", "&c/magik <&7set&
                     ?: return sendMessage(sender, "&cThat player either isn't online or doesn't exist!")
 
                 createInventory(magik, target)
+                sendMessage(sender, "&7Opened the race selection menu for &b${target.name}&7.")
             }
 
             "check" -> {
-
                 if (args.size < 2) {
                     return invalidUse()
                 }

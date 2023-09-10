@@ -4,11 +4,14 @@ import es.skepz.magik.Magik
 import es.skepz.magik.tuodlib.colorize
 import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
+import org.bukkit.Material
 import org.bukkit.NamespacedKey
+import org.bukkit.block.Block
 import org.bukkit.entity.Player
 import org.bukkit.event.Listener
 import org.bukkit.inventory.ItemStack
 import org.bukkit.persistence.PersistentDataType
+
 
 fun start(magik: Magik) {
     Bukkit.getScheduler().runTaskTimer(magik, Runnable {
@@ -47,11 +50,14 @@ fun getRace(magik: Magik, player: Player): Race? {
 
 fun createInventory(magik: Magik, p: Player) {
     val inv = Bukkit.createInventory(p, 27, Component.text(colorize("&6Pick your race")))
+    if (magik.races.isEmpty()) return
     magik.inventories.add(inv)
-    magik.races.forEachIndexed { x, race ->
+    magik.races.forEach { race ->
         val item = race.guiDisplayItem()
         item.itemMeta = item.itemMeta.also {
-            it.persistentDataContainer.set(NamespacedKey(magik, race.name()), PersistentDataType.DOUBLE, Math.PI)
+            val key = NamespacedKey(magik, race.name())
+            it.persistentDataContainer.set(key, PersistentDataType.STRING, race.name())
+            magik.guiKeys.add(key)
         }
         inv.addItem(item)
     }

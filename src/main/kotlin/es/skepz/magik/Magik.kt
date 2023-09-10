@@ -7,6 +7,7 @@ import es.skepz.magik.events.EventPlayerLeave
 import es.skepz.magik.files.UserFile
 import es.skepz.magik.races.*
 import es.skepz.magik.tuodlib.wrappers.CFGFile
+import org.bukkit.NamespacedKey
 import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.ItemStack
 import org.bukkit.plugin.java.JavaPlugin
@@ -22,6 +23,8 @@ class Magik : JavaPlugin() {
     val inventories = mutableListOf<Inventory>()
     val raceItems = mutableListOf<ItemStack>()
 
+    val guiKeys = mutableListOf<NamespacedKey>()
+
     override fun onEnable() {
 
         // commands
@@ -33,9 +36,10 @@ class Magik : JavaPlugin() {
         EventInventory(this).register()
 
         // config defaults
-        config.default("misc.dwarf_max_vein_mine", 5)
+        config.default("misc.dwarf_max_vein_mine", 4)
 
         // races
+        Aquarian(this).register()
         Avian(this).register()
         Druid(this).register()
         Dwarf(this).register()
@@ -57,7 +61,7 @@ class Magik : JavaPlugin() {
 
             val race = file.getRace()
             if (race == null) {
-                // TODO: Race selection here
+                createInventory(this, player)
                 return@forEach
             }
 

@@ -23,7 +23,9 @@ class Human(magik: Magik) : Race(magik) {
             it.isUnbreakable = true
             it.displayName(Component.text(colorize("&7&lHuman")))
             it.lore(listOf(
-                Component.text(colorize("&7- No buffs or debuffs"))))
+                Component.text(colorize("&7For players who want the vanilla experience")),
+                Component.text(colorize("&7- No buffs or debuffs"))
+            ))
         }
 
         return item

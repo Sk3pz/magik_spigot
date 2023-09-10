@@ -2,6 +2,7 @@ package es.skepz.magik.events
 
 import es.skepz.magik.Magik
 import es.skepz.magik.files.UserFile
+import es.skepz.magik.races.createInventory
 import es.skepz.magik.races.setRace
 import es.skepz.magik.tuodlib.wrappers.CoreEvent
 import org.bukkit.event.EventHandler
@@ -19,7 +20,7 @@ class EventPlayerJoin(val magik: Magik) : CoreEvent(magik) {
 
         val race = file.getRace()
         if (race == null) {
-            // TODO: Race selection here
+            createInventory(magik, player)
             return
         }
 

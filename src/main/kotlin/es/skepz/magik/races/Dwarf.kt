@@ -6,10 +6,7 @@ import es.skepz.magik.tuodlib.dropItem
 import es.skepz.magik.tuodlib.playSound
 import es.skepz.magik.tuodlib.sendMessage
 import net.kyori.adventure.text.Component
-import org.bukkit.Location
-import org.bukkit.Material
-import org.bukkit.NamespacedKey
-import org.bukkit.Sound
+import org.bukkit.*
 import org.bukkit.block.Block
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.Player
@@ -21,27 +18,37 @@ import org.bukkit.event.inventory.InventoryAction
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.player.PlayerDropItemEvent
 import org.bukkit.event.player.PlayerInteractEvent
+import org.bukkit.event.player.PlayerMoveEvent
 import org.bukkit.event.player.PlayerRespawnEvent
 import org.bukkit.inventory.ItemStack
 import org.bukkit.persistence.PersistentDataType
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
+import java.lang.Math.pow
 import java.util.*
+import kotlin.collections.HashSet
+import kotlin.math.pow
 
 class Dwarf(magik: Magik) : Race(magik) {
 
-    enum class PickaxeMode { Mine, Vein, Silk, Smelt }
-    val pxKey = NamespacedKey(magik, "dwarven_pickaxe")
+    enum class PickaxeMode { Mine, Fast, Vein, Silk, Smelt }
+    private val pxKey = NamespacedKey(magik, "dwarven_pickaxe")
 
-    private val playerMode = HashMap<UUID, PickaxeMode>()
+    private val playerMode = mutableMapOf<UUID, PickaxeMode>()
+    //private val cavePlayers = mutableSetOf<Player>()
 
     private val maxHealth = 24.0
 
-    val veinMineMax = magik.config.cfg.getInt("misc.dwarf_max_vein_mine")
+    private val veinMineMax = magik.config.cfg.getInt("misc.dwarf_max_vein_mine").toDouble().pow(3.0).toInt()
 
     override fun update(player: Player) {
         player.addPotionEffect(PotionEffect(PotionEffectType.SLOW, 2, 0, false, false))
         player.addPotionEffect(PotionEffect(PotionEffectType.FAST_DIGGING, 2, 1, false, false))
+        player.addPotionEffect(PotionEffect(PotionEffectType.HUNGER, 2, 0, false, false))
+
+//        if (player.location.block.lightFromSky > 10) {
+//            player.addPotionEffect(PotionEffect(PotionEffectType.DARKNESS, 40, 0, false, false))
+//        }
     }
 
     override fun guiDisplayItem(): ItemStack {
@@ -51,13 +58,13 @@ class Dwarf(magik: Magik) : Race(magik) {
             it.isUnbreakable = true
             it.displayName(Component.text(colorize("&7&lDwarf")))
             it.lore(listOf(
-                Component.text(colorize("&c&lCOMING SOON")),
+                Component.text(colorize("&7Great for players who love to mine")),
                 Component.text(colorize("&7- &aDwarven Pickaxe: different modes to help mine")),
-                //Component.text(colorize("&7- &aOre Sense (5 blocks distance)")),
-                Component.text(colorize("&7- &aPermanent haste 2")),
+                Component.text(colorize("&7- &aHaste 2")),
                 Component.text(colorize("&7- &a+2 max hearts")),
                 Component.text(colorize("&7- &cSlowness")),
-                //Component.text(colorize("&7- &cBlindness when not underground")) // todo: tbd
+                Component.text(colorize("&7- &cHungrier than normal")),
+                //Component.text(colorize("&7- &cTrouble seeing above ground")),
             ))
         }
 
@@ -89,6 +96,7 @@ class Dwarf(magik: Magik) : Race(magik) {
     }
 
     override fun remove(player: Player) {
+        player.resetMaxHealth()
         val inv = player.inventory
         inv.contents.forEach { item ->
             if (item == null) return@forEach
@@ -102,10 +110,12 @@ class Dwarf(magik: Magik) : Race(magik) {
         val pick = ItemStack(Material.NETHERITE_PICKAXE)
         pick.itemMeta = pick.itemMeta.also {
             it.displayName(Component.text(colorize("&cDwarven Pickaxe ${modeToName(PickaxeMode.Mine)}")))
-            it.lore(listOf(Component.text(colorize("&4Forged in the fires of the nether"))))
+            it.lore(listOf(
+                Component.text(colorize("&4Forged in the fires of the nether")),
+                Component.text(colorize("&4Right click with this in your hand to change modes."))
+            ))
             it.isUnbreakable = true
             it.persistentDataContainer.set(pxKey, PersistentDataType.DOUBLE, Math.PI)
-            it.addEnchant(Enchantment.DIG_SPEED, 5, true)
             it.addEnchant(Enchantment.DAMAGE_ALL, 7, true)
             it.addEnchant(Enchantment.LOOT_BONUS_BLOCKS, 4, true)
         }
@@ -113,12 +123,14 @@ class Dwarf(magik: Magik) : Race(magik) {
     }
 
     private fun checkPickaxe(item: ItemStack): Boolean {
+        if (!item.hasItemMeta()) return false
         return item.itemMeta.persistentDataContainer.has(pxKey, PersistentDataType.DOUBLE)
     }
 
     private fun modeToName(mode: PickaxeMode): String {
         return when (mode) {
             PickaxeMode.Mine  -> "&8(&6mine&8)"
+            PickaxeMode.Fast  -> "&8(&6fast&8)"
             PickaxeMode.Vein  -> "&8(&6vein&8)"
             PickaxeMode.Silk  -> "&8(&6silk&8)"
             PickaxeMode.Smelt -> "&8(&6smelt&8)"
@@ -135,7 +147,6 @@ class Dwarf(magik: Magik) : Race(magik) {
                 meta.removeEnchant(it)
             }
 
-            meta.addEnchant(Enchantment.DIG_SPEED, 5, true)
             meta.addEnchant(Enchantment.DAMAGE_ALL, 7, true)
 
             when (mode) {
@@ -144,6 +155,9 @@ class Dwarf(magik: Magik) : Race(magik) {
                 }
                 PickaxeMode.Silk  -> {
                     meta.addEnchant(Enchantment.SILK_TOUCH, 1, true)
+                }
+                PickaxeMode.Fast -> {
+                    meta.addEnchant(Enchantment.DIG_SPEED, 5, true)
                 }
                 else -> {}
             }
@@ -154,7 +168,8 @@ class Dwarf(magik: Magik) : Race(magik) {
         val mode = getMode(player)
 
         when (mode) {
-            PickaxeMode.Mine  -> setMode(player, pick, PickaxeMode.Vein)
+            PickaxeMode.Mine  -> setMode(player, pick, PickaxeMode.Fast)
+            PickaxeMode.Fast  -> setMode(player, pick, PickaxeMode.Vein)
             PickaxeMode.Vein  -> setMode(player, pick, PickaxeMode.Silk)
             PickaxeMode.Silk  -> setMode(player, pick, PickaxeMode.Smelt)
             PickaxeMode.Smelt -> setMode(player, pick, PickaxeMode.Mine)
@@ -180,6 +195,29 @@ class Dwarf(magik: Magik) : Race(magik) {
         if (!player.isSneaking) {
             changeMode(player, item)
         }
+    }
+
+    private fun isVeinMiningBlock(type: Material): Boolean {
+        return type == Material.COAL_ORE ||
+                type == Material.DEEPSLATE_COAL_ORE ||
+                type == Material.COPPER_ORE ||
+                type == Material.DEEPSLATE_COPPER_ORE ||
+                type == Material.IRON_ORE ||
+                type == Material.DEEPSLATE_IRON_ORE ||
+                type == Material.GOLD_ORE ||
+                type == Material.DEEPSLATE_GOLD_ORE ||
+                type == Material.REDSTONE_ORE ||
+                type == Material.DEEPSLATE_REDSTONE_ORE ||
+                type == Material.LAPIS_ORE ||
+                type == Material.DEEPSLATE_LAPIS_ORE ||
+                type == Material.DIAMOND_ORE ||
+                type == Material.DEEPSLATE_DIAMOND_ORE ||
+                type == Material.EMERALD_ORE ||
+                type == Material.DEEPSLATE_EMERALD_ORE ||
+                type == Material.NETHER_QUARTZ_ORE ||
+                type == Material.NETHER_GOLD_ORE ||
+                type == Material.DRIPSTONE_BLOCK ||
+                type == Material.COBBLESTONE
     }
 
     private fun vineBlockBreak(startBlock: Block, type: Material, dropLocation: Location) {
@@ -226,14 +264,20 @@ class Dwarf(magik: Magik) : Race(magik) {
         val player = event.player.takeIf { it.isDwarf() }
             ?: return
 
+        if (player.gameMode != GameMode.SURVIVAL) return
         if (!checkPickaxe(player.inventory.itemInMainHand)) return
 
         val block = event.block
 
         when (getMode(player)) {
             PickaxeMode.Vein -> {
-                event.isDropItems = false
-                vineBlockBreak(block, block.type, block.location.add(0.5, 0.5, 0.5))
+                if (isVeinMiningBlock(block.type)) {
+                    event.isDropItems = false
+                    vineBlockBreak(block, block.type, block.location.add(0.5, 0.5, 0.5))
+                } else {
+                    sendMessage(player, "&cYou can't vein mine this block!")
+                    playSound(player, Sound.BLOCK_NOTE_BLOCK_BASS, 1, 0.1f)
+                }
             }
             PickaxeMode.Smelt -> {
                 // iron, gold, copper
@@ -269,6 +313,17 @@ class Dwarf(magik: Magik) : Race(magik) {
             else -> {}
         }
     }
+
+//    @EventHandler
+//    fun onMove(event: PlayerMoveBlockEvent) {
+//        val player = event.player.takeIf { it.isDwarf() }
+//            ?: return
+//        if (isInCave(player)) {
+//            cavePlayers.add(player)
+//        } else {
+//            cavePlayers.remove(player)
+//        }
+//    }
 
     @EventHandler
     fun itemDrop(event: PlayerDropItemEvent) {

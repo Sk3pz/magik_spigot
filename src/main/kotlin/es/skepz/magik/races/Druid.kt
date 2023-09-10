@@ -62,8 +62,8 @@ class Druid(magik: Magik) : Race(magik) {
         item.itemMeta = item.itemMeta.also {
             it.isUnbreakable = true
             it.displayName(Component.text(colorize("&a&lDruid")))
-            // TODO: auto replant crops (if not sneaking)
             it.lore(listOf(
+                Component.text(colorize("&7Great for farmers")),
                 Component.text(colorize("&7- &aStick Of Life: grows crops")),
                 Component.text(colorize("&7- &aRegen when on grass")),
                 Component.text(colorize("&7- &aPoison thorns")),

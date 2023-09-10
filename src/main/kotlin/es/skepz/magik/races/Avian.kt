@@ -64,6 +64,7 @@ class Avian(magik: Magik) : Race(magik) {
             meta.displayName(Component.text(colorize("&6&lAvian")))
             meta.lore(
                 listOf(
+                    "&7Great for players who love to explore",
                     "&7- &aPermanent elytra",
                     "&7- &aInfinite firework",
                     "&7- &aJump boost",
