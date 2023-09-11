@@ -35,9 +35,6 @@ class Magik : JavaPlugin() {
         EventPlayerLeave(this).register()
         EventInventory(this).register()
 
-        // config defaults
-        config.default("misc.dwarf_max_vein_mine", 4)
-
         // races
         Aquarian(this).register()
         Avian(this).register()
@@ -65,7 +62,8 @@ class Magik : JavaPlugin() {
                 return@forEach
             }
 
-            setRace(this, player, race)
+            players[player.uniqueId] = race
+            setRace(this, player, race, false)
         }
 
     }

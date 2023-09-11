@@ -8,6 +8,7 @@ import es.skepz.magik.tuodlib.sendMessage
 import net.kyori.adventure.text.Component
 import org.bukkit.GameMode
 import org.bukkit.Material
+import org.bukkit.NamespacedKey
 import org.bukkit.Sound
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
@@ -15,13 +16,13 @@ import org.bukkit.event.block.Action
 import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.inventory.InventoryClickEvent
-import org.bukkit.event.inventory.InventoryType.CRAFTING
-import org.bukkit.event.inventory.InventoryType.SlotType
+import org.bukkit.event.inventory.InventoryType.*
 import org.bukkit.event.player.PlayerDropItemEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerRespawnEvent
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.FireworkMeta
+import org.bukkit.persistence.PersistentDataType
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 
@@ -30,22 +31,8 @@ class Avian(magik: Magik) : Race(magik) {
     private val maxHealth = 12.0
     private val wingsName = "&fAvian Wings"
     private val fireworkName = "&cInfinite Firework"
-    private val elytra = ItemStack(Material.ELYTRA, 1)
-    private val firework = ItemStack(Material.FIREWORK_ROCKET, 1)
-
-    init {
-        elytra.itemMeta = elytra.itemMeta.also {
-            it.isUnbreakable = true
-            it.displayName(Component.text(colorize(wingsName)))
-            it.lore(listOf(Component.text(colorize("&6Allows avians to fly"))))
-        }
-
-        firework.itemMeta = (firework.itemMeta as FireworkMeta).also {
-            it.displayName(Component.text(colorize(fireworkName)))
-            it.lore(listOf(Component.text(colorize("&6Allows avians to fly"))))
-            it.power = 1
-        }
-    }
+    private val elytraKey = NamespacedKey(magik, "avian_elytra")
+    private val fireworkKey = NamespacedKey(magik, "avian_firework")
 
     override fun update(player: Player) {
         if (!player.isSneaking) {
@@ -67,11 +54,12 @@ class Avian(magik: Magik) : Race(magik) {
                     "&7Great for players who love to explore",
                     "&7- &aPermanent elytra",
                     "&7- &aInfinite firework",
-                    "&7- &aJump boost",
+                    "&7- &aJumps higher",
                     "&7- &aImmune to fall damage", // todo maybe reduced fall damage?
-                    "&7- &cSlowness when on ground",
+                    "&7- &cSlower on the ground",
                     "&7- &cCan only wear leather and chainmail armor",
-                    "&7- &c-4 max hearts"
+                    "&7- &c6 max hearts",
+                    "&7- &cAllergic to unloaded chunks"
                 ).map { Component.text(colorize(it)) }
             )
         }
@@ -83,20 +71,42 @@ class Avian(magik: Magik) : Race(magik) {
         return "Avian"
     }
 
+    private fun generateElytra(): ItemStack {
+        val elytra = ItemStack(Material.ELYTRA, 1)
+        elytra.itemMeta = elytra.itemMeta.also {
+            it.isUnbreakable = true
+            it.displayName(Component.text(colorize(wingsName)))
+            it.lore(listOf(Component.text(colorize("&6Allows avians to fly"))))
+            it.persistentDataContainer.set(elytraKey, PersistentDataType.DOUBLE, 1.0)
+        }
+        return elytra
+    }
+
+    private fun generateFirework(): ItemStack {
+        val firework = ItemStack(Material.FIREWORK_ROCKET, 1)
+        firework.itemMeta = (firework.itemMeta as FireworkMeta).also {
+            it.displayName(Component.text(colorize(fireworkName)))
+            it.lore(listOf(Component.text(colorize("&6Allows avians to fly"))))
+            it.persistentDataContainer.set(fireworkKey, PersistentDataType.DOUBLE, 1.0)
+            it.power = 1
+        }
+        return firework
+    }
+
     private fun checkElytra(item: ItemStack): Boolean {
-        return item.isSimilar(elytra)
+        if (!item.hasItemMeta()) return false
+        return item.itemMeta.persistentDataContainer.has(elytraKey, PersistentDataType.DOUBLE)
     }
 
     private fun checkFirework(item: ItemStack): Boolean {
-        return item.isSimilar(firework)
+        if (!item.hasItemMeta()) return false
+        return item.itemMeta.persistentDataContainer.has(fireworkKey, PersistentDataType.DOUBLE)
     }
 
     override fun set(player: Player) {
         val inventory = player.inventory
 
-        if (!inventory.contains(firework)) {
-            inventory.addItem(firework)
-        }
+        inventory.addItem(generateFirework())
 
         // handle armor
         val helm = inventory.helmet
@@ -113,7 +123,7 @@ class Avian(magik: Magik) : Race(magik) {
             inventory.addItem(ches)
         }
 
-        inventory.chestplate = elytra
+        inventory.chestplate = generateElytra()
         if (legg != null && isHeavyArmor(legg)) {
             inventory.addItem(legg)
             inventory.leggings = ItemStack(Material.AIR)
@@ -131,7 +141,15 @@ class Avian(magik: Magik) : Race(magik) {
 
         player.resetMaxHealth()
         inventory.chestplate = ItemStack(Material.AIR)
-        inventory.remove(firework)
+        inventory.contents.forEach { item ->
+            if (item == null) return@forEach
+            if (checkFirework(item)) {
+                inventory.remove(item)
+            }
+            if (checkElytra(item)) {
+                inventory.remove(item)
+            }
+        }
     }
 
     private fun isAvian(p: Player): Boolean {
@@ -176,9 +194,7 @@ class Avian(magik: Magik) : Race(magik) {
 
         // check if item is the special firework
         if (checkFirework(item) && (event.action != Action.RIGHT_CLICK_AIR)) {
-            if (player.gameMode != GameMode.CREATIVE) {
-                event.isCancelled = true
-            }
+            event.isCancelled = true
         }
     }
 
@@ -194,8 +210,8 @@ class Avian(magik: Magik) : Race(magik) {
         }
 
         if (checkFirework(event.firework.item)) {
-            player.inventory.remove(firework)
-            player.inventory.addItem(firework)
+            player.inventory.remove(event.firework.item)
+            player.inventory.addItem(generateFirework())
         }
     }
 
@@ -208,8 +224,14 @@ class Avian(magik: Magik) : Race(magik) {
 
         val current = event.currentItem
 
-        if (event.click.isShiftClick && (event.inventory.type == CRAFTING)) {
-            if (current != null && isHeavyArmor(current)) {
+        if (current != null) {
+            if (event.inventory.type != CRAFTING && checkFirework(current)) {
+                event.isCancelled = true
+                playSound(player, Sound.BLOCK_NOTE_BLOCK_BASS, 1, 0.1f)
+                return
+            }
+
+            if (event.click.isShiftClick && event.inventory.type == CRAFTING && isHeavyArmor(current)) {
                 event.isCancelled = true
                 sendMessage(player, "&cAvians can only wear leather or chainmail armor!")
                 playSound(player, Sound.BLOCK_NOTE_BLOCK_BASS, 1, 0.1f)
@@ -265,9 +287,21 @@ class Avian(magik: Magik) : Race(magik) {
         if (!isAvian(event.player)) {
             return
         }
-
-        event.drops.remove(elytra)
-        event.drops.remove(firework)
+        remove(event.player)
+        val drops = event.drops
+        val flagged = mutableListOf<ItemStack>()
+        drops.forEach { item ->
+            if (item == null) return@forEach
+            if (checkElytra(item) || (item.type == Material.ELYTRA && (item.hasItemMeta()))) {
+                flagged.add(item)
+            }
+            if (checkFirework(item)) {
+                flagged.add(item)
+            }
+        }
+        flagged.forEach {
+            drops.remove(it)
+        }
     }
 
     @EventHandler
@@ -277,6 +311,6 @@ class Avian(magik: Magik) : Race(magik) {
             return
         }
 
-        setRace(magik, player, this)
+        setRace(magik, player, this, false)
     }
 }

@@ -13,6 +13,7 @@ import org.bukkit.event.EventHandler
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.inventory.InventoryAction
 import org.bukkit.event.inventory.InventoryClickEvent
+import org.bukkit.event.inventory.InventoryType
 import org.bukkit.event.player.PlayerDropItemEvent
 import org.bukkit.event.player.PlayerRespawnEvent
 import org.bukkit.inventory.ItemStack
@@ -28,11 +29,16 @@ class Aquarian(magik: Magik) : Race(magik) {
         player.addPotionEffect(PotionEffect(PotionEffectType.DOLPHINS_GRACE, 2, 0, false, false))
         player.addPotionEffect(PotionEffect(PotionEffectType.WATER_BREATHING, 2, 0, false, false))
 
-        if (player.location.block.type == Material.WATER) {
+        if (player.location.block.type != Material.WATER) {
             player.maxHealth = 18.0
+            player.addPotionEffect(PotionEffect(PotionEffectType.SLOW, 2, 1, false, false))
+            if (player.hasPotionEffect(PotionEffectType.NIGHT_VISION)) {
+                player.removePotionEffect(PotionEffectType.NIGHT_VISION)
+            }
         } else {
             player.resetMaxHealth()
-            player.addPotionEffect(PotionEffect(PotionEffectType.SLOW, 2, 1, false, false))
+            player.addPotionEffect(PotionEffect(PotionEffectType.FAST_DIGGING, 2, 1, false, false))
+            player.addPotionEffect(PotionEffect(PotionEffectType.NIGHT_VISION, 360, 0, false, false))
         }
     }
 
@@ -44,12 +50,15 @@ class Aquarian(magik: Magik) : Race(magik) {
             it.displayName(Component.text(colorize("&3&lAquarian")))
             it.lore(listOf(
                 Component.text(colorize("&7Great for Dihydrogen Monoxide enjoyers")),
+                Component.text(colorize("&7(&cWIP, SUBJECT TO CHANGE&7)")),
                 Component.text(colorize("&7- &aTrident: The power of the seas at your fingertips")),
                 Component.text(colorize("  &7- Please note the trident may change in the next update")),
-                Component.text(colorize("&7- &aWater Breathing")),
-                Component.text(colorize("&7- &aDolphin's Grace")),
+                Component.text(colorize("&7- &aSee better underwater")),
+                Component.text(colorize("&7- &aCan breathe underwater")),
+                Component.text(colorize("&7- &aFaster digging underwater")),
+                Component.text(colorize("&7- &aFast swimmer")),
                 Component.text(colorize("&7- &cSlow on land")),
-                Component.text(colorize("&7- &c-2 max health out of water")),
+                Component.text(colorize("&7- &cDecreased health out of water")),
             ))
         }
 
@@ -59,8 +68,8 @@ class Aquarian(magik: Magik) : Race(magik) {
     // consider: modes to switch between loyalty and riptide?
 
     private fun generateTrident(): ItemStack {
-        val pick = ItemStack(Material.TRIDENT)
-        pick.itemMeta = pick.itemMeta.also {
+        val item = ItemStack(Material.TRIDENT)
+        item.itemMeta = item.itemMeta.also {
             it.displayName(Component.text(colorize("&3Posideon's Trident")))
             it.lore(listOf(Component.text(colorize("&6The power of the sea in your fingertips"))))
             it.isUnbreakable = true
@@ -68,7 +77,7 @@ class Aquarian(magik: Magik) : Race(magik) {
             it.addEnchant(Enchantment.LOYALTY, 3, true)
             it.addEnchant(Enchantment.IMPALING, 7, true)
         }
-        return pick
+        return item
     }
 
     private fun checkTrident(item: ItemStack): Boolean {
@@ -122,7 +131,7 @@ class Aquarian(magik: Magik) : Race(magik) {
         val item = event.currentItem
             ?: return
 
-        if (checkTrident(item) && event.action == InventoryAction.MOVE_TO_OTHER_INVENTORY) {
+        if (checkTrident(item) && (event.action == InventoryAction.MOVE_TO_OTHER_INVENTORY || event.inventory.type == InventoryType.ANVIL)) {
             event.isCancelled = true
             playSound(player, Sound.BLOCK_NOTE_BLOCK_BASS, 1, 0.1f)
         }
@@ -145,6 +154,6 @@ class Aquarian(magik: Magik) : Race(magik) {
         val player = event.player.takeIf { it.isAquarian() }
             ?: return
 
-        setRace(magik, player, this)
+        setRace(magik, player, this, false)
     }
 }

@@ -16,6 +16,7 @@ import org.bukkit.event.block.BlockBreakEvent
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.inventory.InventoryAction
 import org.bukkit.event.inventory.InventoryClickEvent
+import org.bukkit.event.inventory.InventoryType
 import org.bukkit.event.player.PlayerDropItemEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerMoveEvent
@@ -39,16 +40,15 @@ class Dwarf(magik: Magik) : Race(magik) {
 
     private val maxHealth = 24.0
 
-    private val veinMineMax = magik.config.cfg.getInt("misc.dwarf_max_vein_mine").toDouble().pow(3.0).toInt()
+    private val veinMineMax = 64 // 4 ^ 3
 
     override fun update(player: Player) {
-        player.addPotionEffect(PotionEffect(PotionEffectType.SLOW, 2, 0, false, false))
-        player.addPotionEffect(PotionEffect(PotionEffectType.FAST_DIGGING, 2, 1, false, false))
+        player.addPotionEffect(PotionEffect(PotionEffectType.SLOW, 2, 1, false, false))
         player.addPotionEffect(PotionEffect(PotionEffectType.HUNGER, 2, 0, false, false))
 
-//        if (player.location.block.lightFromSky > 10) {
-//            player.addPotionEffect(PotionEffect(PotionEffectType.DARKNESS, 40, 0, false, false))
-//        }
+        if (player.location.block.lightFromSky <= 10) {
+            player.addPotionEffect(PotionEffect(PotionEffectType.FAST_DIGGING, 2, 1, false, false))
+        }
     }
 
     override fun guiDisplayItem(): ItemStack {
@@ -56,13 +56,13 @@ class Dwarf(magik: Magik) : Race(magik) {
 
         item.itemMeta = item.itemMeta.also {
             it.isUnbreakable = true
-            it.displayName(Component.text(colorize("&7&lDwarf")))
+            it.displayName(Component.text(colorize("&8&lDwarf")))
             it.lore(listOf(
                 Component.text(colorize("&7Great for players who love to mine")),
                 Component.text(colorize("&7- &aDwarven Pickaxe: different modes to help mine")),
-                Component.text(colorize("&7- &aHaste 2")),
-                Component.text(colorize("&7- &a+2 max hearts")),
-                Component.text(colorize("&7- &cSlowness")),
+                Component.text(colorize("&7- &aQuicker at digging")),
+                Component.text(colorize("&7- &a2 more hearts")),
+                Component.text(colorize("&7- &cSlower than most")),
                 Component.text(colorize("&7- &cHungrier than normal")),
                 //Component.text(colorize("&7- &cTrouble seeing above ground")),
             ))
@@ -110,14 +110,14 @@ class Dwarf(magik: Magik) : Race(magik) {
         val pick = ItemStack(Material.NETHERITE_PICKAXE)
         pick.itemMeta = pick.itemMeta.also {
             it.displayName(Component.text(colorize("&cDwarven Pickaxe ${modeToName(PickaxeMode.Mine)}")))
-            it.lore(listOf(
-                Component.text(colorize("&4Forged in the fires of the nether")),
-                Component.text(colorize("&4Right click with this in your hand to change modes."))
-            ))
             it.isUnbreakable = true
             it.persistentDataContainer.set(pxKey, PersistentDataType.DOUBLE, Math.PI)
             it.addEnchant(Enchantment.DAMAGE_ALL, 7, true)
             it.addEnchant(Enchantment.LOOT_BONUS_BLOCKS, 4, true)
+            it.lore(listOf(
+                Component.text(colorize("&4Forged in the fires of the nether")),
+                Component.text(colorize("&8[&6Right Click&8] &7while holding to change modes."))
+            ))
         }
         return pick
     }
@@ -269,6 +269,8 @@ class Dwarf(magik: Magik) : Race(magik) {
 
         val block = event.block
 
+        // todo: forge mode? (stone -> stonebricks, etc)
+
         when (getMode(player)) {
             PickaxeMode.Vein -> {
                 if (isVeinMiningBlock(block.type)) {
@@ -283,21 +285,21 @@ class Dwarf(magik: Magik) : Race(magik) {
                 // iron, gold, copper
                 val dropLoc = block.location.add(0.5, 0.5, 0.5)
                 when (block.type) {
-                    Material.IRON_ORE -> {
+                    Material.IRON_ORE, Material.DEEPSLATE_IRON_ORE -> {
                         event.isDropItems = false
                         dropItem(dropLoc, ItemStack(Material.IRON_INGOT))
                     }
-                    Material.GOLD_ORE -> {
+                    Material.GOLD_ORE, Material.DEEPSLATE_GOLD_ORE -> {
                         event.isDropItems = false
                         dropItem(dropLoc, ItemStack(Material.GOLD_INGOT))
                     }
-                    Material.COPPER_ORE -> {
+                    Material.COPPER_ORE, Material.DEEPSLATE_COPPER_ORE -> {
                         event.isDropItems = false
                         dropItem(dropLoc, ItemStack(Material.COPPER_INGOT))
                     }
                     Material.STONE -> {
                         event.isDropItems = false
-                        dropItem(dropLoc, ItemStack(Material.STONE))
+                        dropItem(dropLoc, ItemStack(Material.SMOOTH_STONE))
                     }
                     Material.DEEPSLATE -> {
                         event.isDropItems = false
@@ -313,17 +315,6 @@ class Dwarf(magik: Magik) : Race(magik) {
             else -> {}
         }
     }
-
-//    @EventHandler
-//    fun onMove(event: PlayerMoveBlockEvent) {
-//        val player = event.player.takeIf { it.isDwarf() }
-//            ?: return
-//        if (isInCave(player)) {
-//            cavePlayers.add(player)
-//        } else {
-//            cavePlayers.remove(player)
-//        }
-//    }
 
     @EventHandler
     fun itemDrop(event: PlayerDropItemEvent) {
@@ -344,7 +335,7 @@ class Dwarf(magik: Magik) : Race(magik) {
         val item = event.currentItem
             ?: return
 
-        if (checkPickaxe(item) && event.action == InventoryAction.MOVE_TO_OTHER_INVENTORY) {
+        if (checkPickaxe(item) && (event.action == InventoryAction.MOVE_TO_OTHER_INVENTORY || event.inventory.type == InventoryType.ANVIL)) {
             event.isCancelled = true
             playSound(player, Sound.BLOCK_NOTE_BLOCK_BASS, 1, 0.1f)
         }
@@ -367,6 +358,6 @@ class Dwarf(magik: Magik) : Race(magik) {
         val player = event.player.takeIf { it.isDwarf() }
             ?: return
 
-        setRace(magik, player, this)
+        setRace(magik, player, this, false)
     }
 }

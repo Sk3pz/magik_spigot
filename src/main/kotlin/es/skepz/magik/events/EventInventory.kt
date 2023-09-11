@@ -39,9 +39,9 @@ class EventInventory(val magik: Magik) : CoreEvent(magik) {
             if (container.has(it, PersistentDataType.STRING)) {
                 val raceName = container.get(it, PersistentDataType.STRING) ?: return
                 val race = raceFromName(magik, raceName) ?: return
-                setRace(magik, p, race)
-                serverBroadcast("&b${p.name} &7Has chosen to become a &b${raceName}&7!")
+                setRace(magik, p, race, true)
                 inv.close()
+                return
             }
         }
     }

@@ -24,7 +24,7 @@ class MagikCommand(val magik: Magik) : CoreCMD(magik, "magik", "&c/magik <&7set&
                 val t = Bukkit.getPlayer(args[1])
                     ?: return sendMessage(sender, "&cThat player either isn't online or doesn't exist!")
 
-                setRace(magik, t, race)
+                setRace(magik, t, race, false)
                 sendMessage(sender, "&7Set &b${t.name}&7's race to &b${race.name()}")
             }
 

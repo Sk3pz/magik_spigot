@@ -16,10 +16,12 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.inventory.InventoryAction
 import org.bukkit.event.inventory.InventoryClickEvent
+import org.bukkit.event.inventory.InventoryType
 import org.bukkit.event.player.PlayerDropItemEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerRespawnEvent
 import org.bukkit.inventory.ItemStack
+import org.bukkit.persistence.PersistentDataType
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 import kotlin.math.ceil
@@ -28,15 +30,8 @@ import kotlin.math.min
 class Druid(magik: Magik) : Race(magik) {
 
     private val maxHealth = 16.0
-    private val stick = ItemStack(Material.STICK, 1)
+    private val stickKey = NamespacedKey(magik, "druid_stick")
     private val stickName = "&aStick of Life"
-
-    init {
-        stick.itemMeta = stick.itemMeta.also {
-            it.displayName(Component.text(colorize(stickName)))
-            it.lore(listOf(Component.text(colorize("&6Grow plants with magik"))))
-        }
-    }
 
     override fun update(player: Player) {
         player.addPotionEffect(PotionEffect(PotionEffectType.SPEED, 2, 0, false, false))
@@ -69,14 +64,24 @@ class Druid(magik: Magik) : Race(magik) {
                 Component.text(colorize("&7- &aPoison thorns")),
                 Component.text(colorize("  &8- &aPoisons your attackers")),
                 Component.text(colorize("  &8- &cActs like regen to undead mobs")),
-                Component.text(colorize("&7- &aSpeed 1")),
+                Component.text(colorize("&7- &aQuicker than most")),
                 Component.text(colorize("&7- &aAutomatically replants crops")),
                 Component.text(colorize("&7- &a2x crop yield")),
-                Component.text(colorize("&7- &c-1 max hearts")),
+                Component.text(colorize("&7- &c9 max health")),
                 Component.text(colorize("&7- &cDecreased max health in Nether and End"))))
         }
 
         return item
+    }
+
+    private fun generateStick(): ItemStack {
+        val stick = ItemStack(Material.STICK, 1)
+        stick.itemMeta = stick.itemMeta.also {
+            it.displayName(Component.text(colorize(stickName)))
+            it.lore(listOf(Component.text(colorize("&6Grow plants with magik"))))
+            it.persistentDataContainer.set(stickKey, PersistentDataType.DOUBLE, 1.0)
+        }
+        return stick
     }
 
     private fun Player.isDruid(): Boolean {
@@ -84,7 +89,8 @@ class Druid(magik: Magik) : Race(magik) {
     }
 
     private fun checkStick(item: ItemStack): Boolean {
-        return item.isSimilar(stick)
+        if (!item.hasItemMeta()) return false
+        return item.itemMeta.persistentDataContainer.has(stickKey, PersistentDataType.DOUBLE)
     }
 
     override fun name(): String {
@@ -92,14 +98,18 @@ class Druid(magik: Magik) : Race(magik) {
     }
 
     override fun set(player: Player) {
-        if (!player.inventory.contains(stick)) {
-            player.inventory.addItem(stick)
-        }
+        player.inventory.addItem(generateStick())
     }
 
     override fun remove(player: Player) {
-        player.inventory.remove(stick)
         player.resetMaxHealth()
+        val inv = player.inventory
+        inv.contents.forEach { item ->
+            if (item == null) return@forEach
+            if (checkStick(item)) {
+                inv.remove(item)
+            }
+        }
     }
 
     private fun handleDrops(block: Block, harvestItem: ItemStack?) {
@@ -243,7 +253,7 @@ class Druid(magik: Magik) : Race(magik) {
         val item = event.currentItem 
 	        ?: return
 	    
-        if (checkStick(item) && event.action == InventoryAction.MOVE_TO_OTHER_INVENTORY) {
+        if (checkStick(item) && (event.action == InventoryAction.MOVE_TO_OTHER_INVENTORY || event.inventory.type == InventoryType.ANVIL)) {
             event.isCancelled = true
             playSound(player, Sound.BLOCK_NOTE_BLOCK_BASS, 1, 0.1f)
         }
@@ -252,7 +262,13 @@ class Druid(magik: Magik) : Race(magik) {
     @EventHandler
     fun onDeath(event: PlayerDeathEvent) {
         if (!event.player.isDruid()) return
-        event.drops.remove(stick)
+        val drops = event.drops
+        drops.forEach { item ->
+            if (item == null) return@forEach
+            if (checkStick(item)) {
+                drops.remove(item)
+            }
+        }
     }
 
     @EventHandler
@@ -261,6 +277,6 @@ class Druid(magik: Magik) : Race(magik) {
         val player = event.player.takeIf { it.isDruid() }
             ?: return
 
-        setRace(magik, player, this)
+        setRace(magik, player, this, false)
     }
 }

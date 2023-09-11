@@ -13,8 +13,8 @@ import org.bukkit.event.EventHandler
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.inventory.InventoryAction
 import org.bukkit.event.inventory.InventoryClickEvent
+import org.bukkit.event.inventory.InventoryType
 import org.bukkit.event.player.PlayerDropItemEvent
-import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerRespawnEvent
 import org.bukkit.inventory.ItemStack
 import org.bukkit.persistence.PersistentDataType
@@ -44,22 +44,21 @@ class Orc(magik: Magik) : Race(magik) {
             it.isUnbreakable = true
             it.displayName(Component.text(colorize("&4&lOrc")))
             it.lore(listOf(
-                Component.text(colorize("&c&lCOMING SOON")),
                 Component.text(colorize("&7Great for players who like to hit hard")),
                 Component.text(colorize("&7- &aBattle Axe - more damage, slower speed")),
-                Component.text(colorize("  &7- &cMining Fatigue when holding the axe")),
-                Component.text(colorize("&7- &aJump boost")),
-                Component.text(colorize("&7- &aStrength")),
-                Component.text(colorize("&7- &a+10 max hearts")),
-                Component.text(colorize("&7- &cSlowness 2"))))
+                Component.text(colorize("  &7- &cBad for chopping trees")),
+                Component.text(colorize("&7- &aJumps really high")),
+                Component.text(colorize("&7- &aStronger than others")),
+                Component.text(colorize("&7- &aDouble health (20 hearts)")),
+                Component.text(colorize("&7- &cSlower than most"))))
         }
 
         return item
     }
 
     private fun generateAxe(): ItemStack {
-        val pick = ItemStack(Material.IRON_AXE)
-        pick.itemMeta = pick.itemMeta.also {
+        val item = ItemStack(Material.IRON_AXE)
+        item.itemMeta = item.itemMeta.also {
             it.displayName(Component.text(colorize("&4Battle Axe")))
             it.lore(listOf(Component.text(colorize("&cME ORC. ME DESTROY YOU."))))
             it.isUnbreakable = true
@@ -67,7 +66,7 @@ class Orc(magik: Magik) : Race(magik) {
             it.addEnchant(Enchantment.DAMAGE_ALL, 7, true)
             it.addEnchant(Enchantment.KNOCKBACK, 2, true)
         }
-        return pick
+        return item
     }
 
     private fun checkAxe(item: ItemStack): Boolean {
@@ -118,7 +117,7 @@ class Orc(magik: Magik) : Race(magik) {
         val item = event.currentItem
             ?: return
 
-        if (checkAxe(item) && event.action == InventoryAction.MOVE_TO_OTHER_INVENTORY) {
+        if (checkAxe(item) && (event.action == InventoryAction.MOVE_TO_OTHER_INVENTORY || event.inventory.type == InventoryType.ANVIL)) {
             event.isCancelled = true
             playSound(player, Sound.BLOCK_NOTE_BLOCK_BASS, 1, 0.1f)
         }
@@ -141,6 +140,6 @@ class Orc(magik: Magik) : Race(magik) {
         val player = event.player.takeIf { it.isOrc() }
             ?: return
 
-        setRace(magik, player, this)
+        setRace(magik, player, this, false)
     }
 }

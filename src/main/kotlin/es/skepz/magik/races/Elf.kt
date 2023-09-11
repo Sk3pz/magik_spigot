@@ -8,15 +8,13 @@ import org.bukkit.Material
 import org.bukkit.NamespacedKey
 import org.bukkit.Sound
 import org.bukkit.enchantments.Enchantment
-import org.bukkit.entity.LivingEntity
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
-import org.bukkit.event.entity.EntityDamageByEntityEvent
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.inventory.InventoryAction
 import org.bukkit.event.inventory.InventoryClickEvent
+import org.bukkit.event.inventory.InventoryType
 import org.bukkit.event.player.PlayerDropItemEvent
-import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerRespawnEvent
 import org.bukkit.inventory.ItemStack
 import org.bukkit.persistence.PersistentDataType
@@ -46,9 +44,9 @@ class Elf(magik: Magik) : Race(magik) {
             it.lore(listOf(
                 Component.text(colorize("&7Great for players who prefer ranged PVP")),
                 Component.text(colorize("&7- &aLongbow: Shoots more powerful arrows")),
-                Component.text(colorize("&7- &aIncreased speed")),
-                Component.text(colorize("&7- &aJump boost")),
-                Component.text(colorize("&7- &cPermanent weakness")),
+                Component.text(colorize("&7- &aFaster than most")),
+                Component.text(colorize("&7- &aJumps higher")),
+                Component.text(colorize("&7- &cWeaker")),
                 Component.text(colorize("&7- &cTrouble seeing without proper light"))))
         }
 
@@ -56,8 +54,8 @@ class Elf(magik: Magik) : Race(magik) {
     }
 
     private fun generateBow(): ItemStack {
-        val pick = ItemStack(Material.BOW)
-        pick.itemMeta = pick.itemMeta.also {
+        val item = ItemStack(Material.BOW)
+        item.itemMeta = item.itemMeta.also {
             it.displayName(Component.text(colorize("&2Longbow")))
             it.lore(listOf(Component.text(colorize("&aBuilt with precision to do maximum damage"))))
             it.isUnbreakable = true
@@ -66,7 +64,7 @@ class Elf(magik: Magik) : Race(magik) {
             it.addEnchant(Enchantment.ARROW_INFINITE, 1, true)
             it.addEnchant(Enchantment.ARROW_KNOCKBACK, 4, true)
         }
-        return pick
+        return item
     }
 
     private fun checkBow(item: ItemStack): Boolean {
@@ -119,7 +117,7 @@ class Elf(magik: Magik) : Race(magik) {
         val item = event.currentItem
             ?: return
 
-        if (checkBow(item) && event.action == InventoryAction.MOVE_TO_OTHER_INVENTORY) {
+        if (checkBow(item) && (event.action == InventoryAction.MOVE_TO_OTHER_INVENTORY || event.inventory.type == InventoryType.ANVIL)) {
             event.isCancelled = true
             playSound(player, Sound.BLOCK_NOTE_BLOCK_BASS, 1, 0.1f)
         }
@@ -142,6 +140,6 @@ class Elf(magik: Magik) : Race(magik) {
         val player = event.player.takeIf { it.isElf() }
             ?: return
 
-        setRace(magik, player, this)
+        setRace(magik, player, this, false)
     }
 }

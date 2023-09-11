@@ -2,8 +2,10 @@ package es.skepz.magik.races
 
 import es.skepz.magik.Magik
 import es.skepz.magik.tuodlib.colorize
+import es.skepz.magik.tuodlib.serverBroadcast
 import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
+import org.bukkit.GameMode
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
 import org.bukkit.block.Block
@@ -11,6 +13,8 @@ import org.bukkit.entity.Player
 import org.bukkit.event.Listener
 import org.bukkit.inventory.ItemStack
 import org.bukkit.persistence.PersistentDataType
+import org.bukkit.potion.PotionEffect
+import org.bukkit.potion.PotionEffectType
 
 
 fun start(magik: Magik) {
@@ -35,13 +39,17 @@ fun getRaceNames(magik: Magik): List<String> {
     return magik.races.map { it.name() }
 }
 
-fun setRace(magik: Magik, player: Player, race: Race) {
+fun setRace(magik: Magik, player: Player, race: Race, new: Boolean) {
     // remove old race if needed
     magik.players[player.uniqueId]?.remove(player)
     // set new race
     magik.players[player.uniqueId] = race
     magik.userFiles[player.uniqueId]?.setRace(race)
+    if (new) {
+        serverBroadcast("&b${player.name} &7Has chosen to become a &b${race.name()}&7!")
+    }
     race.set(player)
+    player.addPotionEffect(PotionEffect(PotionEffectType.REGENERATION, 60, 90, false, false))
 }
 
 fun getRace(magik: Magik, player: Player): Race? {

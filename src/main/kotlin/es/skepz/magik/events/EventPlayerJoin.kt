@@ -24,7 +24,7 @@ class EventPlayerJoin(val magik: Magik) : CoreEvent(magik) {
             return
         }
 
-        setRace(magik, player, race)
+        setRace(magik, player, race, false)
     }
 
 }
