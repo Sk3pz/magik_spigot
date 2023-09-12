@@ -28,7 +28,7 @@ import org.bukkit.potion.PotionEffectType
 
 class Avian(magik: Magik) : Race(magik) {
 
-    private val maxHealth = 12.0
+    private val maxHealth = 10.0
     private val wingsName = "&fAvian Wings"
     private val fireworkName = "&cInfinite Firework"
     private val elytraKey = NamespacedKey(magik, "avian_elytra")
@@ -58,7 +58,7 @@ class Avian(magik: Magik) : Race(magik) {
                     "&7- &aImmune to fall damage", // todo maybe reduced fall damage?
                     "&7- &cSlower on the ground",
                     "&7- &cCan only wear leather and chainmail armor",
-                    "&7- &c6 max hearts",
+                    "&7- &c5 max hearts",
                     "&7- &cAllergic to unloaded chunks"
                 ).map { Component.text(colorize(it)) }
             )

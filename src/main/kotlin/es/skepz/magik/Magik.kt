@@ -9,7 +9,6 @@ import es.skepz.magik.races.*
 import es.skepz.magik.tuodlib.wrappers.CFGFile
 import org.bukkit.NamespacedKey
 import org.bukkit.inventory.Inventory
-import org.bukkit.inventory.ItemStack
 import org.bukkit.plugin.java.JavaPlugin
 import java.util.*
 
@@ -19,14 +18,13 @@ class Magik : JavaPlugin() {
     var config = CFGFile(this, "config", "")
 
     val races = mutableListOf<Race>()
+    val comingSoonRaces = mutableListOf<Race>()
     val players = mutableMapOf<UUID, Race>()
     val inventories = mutableListOf<Inventory>()
-    val raceItems = mutableListOf<ItemStack>()
 
     val guiKeys = mutableListOf<NamespacedKey>()
 
     override fun onEnable() {
-
         // commands
         MagikCommand(this).register()
 
@@ -42,11 +40,13 @@ class Magik : JavaPlugin() {
         Dwarf(this).register()
         Elf(this).register()
         Orc(this).register()
-        Human(this).register()
 
-        races.forEach {
-            raceItems.add(it.guiDisplayItem())
-        }
+        // REMEMBER TO CHANGE THE GUI ITEMS FOR NEW RACES!
+        Enderian(this).register()
+        Goblin(this).register()
+        Blazeborn(this).register()
+
+        Human(this).register()
 
         // start the subsystems for handling the races
         start(this)
@@ -69,12 +69,9 @@ class Magik : JavaPlugin() {
     }
 
     override fun onDisable() {
-
         server.onlinePlayers.forEach {
             players[it.uniqueId]?.remove(it)
         }
-
-        // todo: possible edge case if player has selection inventory open on reload run
     }
 
 }

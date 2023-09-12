@@ -24,6 +24,7 @@ import org.bukkit.inventory.ItemStack
 import org.bukkit.persistence.PersistentDataType
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
+import java.util.*
 import kotlin.math.ceil
 import kotlin.math.min
 
@@ -32,6 +33,27 @@ class Druid(magik: Magik) : Race(magik) {
     private val maxHealth = 16.0
     private val stickKey = NamespacedKey(magik, "druid_stick")
     private val stickName = "&aStick of Life"
+
+    private val cooldownMap = mutableMapOf<Player, Int>()
+    private val usageMap = mutableMapOf<Player, Int>()
+
+    private val defaultUses = 5
+    private val defaultCooldown = 10
+
+    override fun cooldownUpdate() {
+        cooldownMap.forEach { (plr, seconds) ->
+            if (seconds == 0) {
+                cooldownMap.remove(plr)
+                usageMap[plr] = defaultUses
+                val stick = findStick(plr) ?: return@forEach
+                updateData(plr, stick)
+                return@forEach
+            }
+            cooldownMap[plr] = seconds - 1
+            val stick = findStick(plr) ?: return@forEach
+            updateData(plr, stick)
+        }
+    }
 
     override fun update(player: Player) {
         player.addPotionEffect(PotionEffect(PotionEffectType.SPEED, 2, 0, false, false))
@@ -67,7 +89,7 @@ class Druid(magik: Magik) : Race(magik) {
                 Component.text(colorize("&7- &aQuicker than most")),
                 Component.text(colorize("&7- &aAutomatically replants crops")),
                 Component.text(colorize("&7- &a2x crop yield")),
-                Component.text(colorize("&7- &c9 max health")),
+                Component.text(colorize("&7- &c8 max health")),
                 Component.text(colorize("&7- &cDecreased max health in Nether and End"))))
         }
 
@@ -78,7 +100,10 @@ class Druid(magik: Magik) : Race(magik) {
         val stick = ItemStack(Material.STICK, 1)
         stick.itemMeta = stick.itemMeta.also {
             it.displayName(Component.text(colorize(stickName)))
-            it.lore(listOf(Component.text(colorize("&6Grow plants with magik"))))
+            it.lore(listOf(
+                Component.text(colorize("&6Right click on crops to grow and harvest them")),
+                Component.text(colorize("&7Has a 10 second cooldown every 5 uses.")),
+            ))
             it.persistentDataContainer.set(stickKey, PersistentDataType.DOUBLE, 1.0)
         }
         return stick
@@ -86,6 +111,16 @@ class Druid(magik: Magik) : Race(magik) {
 
     private fun Player.isDruid(): Boolean {
         return getRace(magik, this) is Druid
+    }
+
+    private fun findStick(player: Player) : ItemStack? {
+        player.inventory.contents.forEach {
+            if (it == null) return@forEach
+            if (checkStick(it)) {
+                return it
+            }
+        }
+        return null
     }
 
     private fun checkStick(item: ItemStack): Boolean {
@@ -99,6 +134,7 @@ class Druid(magik: Magik) : Race(magik) {
 
     override fun set(player: Player) {
         player.inventory.addItem(generateStick())
+        usageMap[player] = defaultUses
     }
 
     override fun remove(player: Player) {
@@ -108,6 +144,19 @@ class Druid(magik: Magik) : Race(magik) {
             if (item == null) return@forEach
             if (checkStick(item)) {
                 inv.remove(item)
+            }
+        }
+
+        usageMap.remove(player)
+        cooldownMap.remove(player)
+    }
+
+    private fun updateData(player: Player, stick: ItemStack) {
+        stick.itemMeta = stick.itemMeta.also {
+            if (cooldownMap.containsKey(player)) {
+                it.displayName(Component.text(colorize("$stickName &8[&c${cooldownMap[player] ?: 0}&8]")))
+            } else if (usageMap.containsKey(player)) {
+                it.displayName(Component.text(colorize("$stickName &8[&f${usageMap[player] ?: 0}&8]")))
             }
         }
     }
@@ -160,10 +209,10 @@ class Druid(magik: Magik) : Race(magik) {
 
             Material.WHEAT, Material.CARROTS, Material.POTATOES, Material.BEETROOTS, Material.COCOA -> {
 
-	            block.blockData = (block.blockData as Ageable).also { 
+	            block.blockData = (block.blockData as Ageable).also {
 					it.age = 0
 	            }
-	            
+
                 handleDrops(block, harvestItem)
                 return true
             }
@@ -172,6 +221,17 @@ class Druid(magik: Magik) : Race(magik) {
         }
 
         return false
+    }
+
+    private fun useStick(player: Player) {
+        val uses = usageMap[player] ?: 1
+        usageMap[player] = uses - 1
+        if (uses <= 0) {
+            cooldownMap[player] = defaultCooldown
+            usageMap.remove(player)
+        }
+        val stick = findStick(player) ?: return
+        updateData(player, stick)
     }
 
     @EventHandler
@@ -193,19 +253,26 @@ class Druid(magik: Magik) : Race(magik) {
         val ageable = block.blockData as? Ageable
             ?: return
 
-        displayParticles(block.location, Particle.VILLAGER_HAPPY, 10, 1.0, 1.0, 1.0)
+        val cooldown = cooldownMap[player]
+
+        if (cooldown != null) {
+            sendMessage(player, "&cYou can't use this item for another $cooldown seconds!")
+            playSound(player, Sound.BLOCK_NOTE_BLOCK_BASS, 1, 0.1f)
+            return
+        }
 
         if (ageable.age >= ageable.maximumAge) {
-
             if (!player.isSneaking) {
+                displayParticles(block.location, Particle.VILLAGER_HAPPY, 10, 1.0, 1.0, 1.0)
                 harvest(block, null)
+                useStick(player)
             }
-
             return
         }
 
         ageable.age = min(ageable.maximumAge, ageable.age + 2)
         block.blockData = ageable
+        useStick(player)
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -214,6 +281,13 @@ class Druid(magik: Magik) : Race(magik) {
             ?: return
 
         if (player.isSneaking) {
+            return
+        }
+
+        val ageable = event.block.blockData as? Ageable
+            ?: return
+
+        if (ageable.age < ageable.maximumAge) {
             return
         }
 

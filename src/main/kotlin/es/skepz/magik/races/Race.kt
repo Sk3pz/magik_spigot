@@ -5,17 +5,13 @@ import es.skepz.magik.tuodlib.colorize
 import es.skepz.magik.tuodlib.serverBroadcast
 import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
-import org.bukkit.GameMode
-import org.bukkit.Material
 import org.bukkit.NamespacedKey
-import org.bukkit.block.Block
 import org.bukkit.entity.Player
 import org.bukkit.event.Listener
 import org.bukkit.inventory.ItemStack
 import org.bukkit.persistence.PersistentDataType
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
-
 
 fun start(magik: Magik) {
     Bukkit.getScheduler().runTaskTimer(magik, Runnable {
@@ -28,7 +24,12 @@ fun start(magik: Magik) {
             }
             r.update(player)
         }
-    }, 0L, 1L) // run every second
+    }, 0L, 1L) // run every tick
+    Bukkit.getScheduler().runTaskTimer(magik, Runnable {
+        for (r in magik.races) {
+            r.cooldownUpdate()
+        }
+    }, 0L, 20L) // run every second
 }
 
 fun raceFromName(magik: Magik, name: String): Race? {
@@ -58,17 +59,31 @@ fun getRace(magik: Magik, player: Player): Race? {
 
 fun createInventory(magik: Magik, p: Player) {
     val inv = Bukkit.createInventory(p, 27, Component.text(colorize("&6Pick your race")))
+
     if (magik.races.isEmpty()) return
+
     magik.inventories.add(inv)
+
+    var comingSoonIndex = 0
     magik.races.forEach { race ->
+        if (race.comingSoon()) {
+            inv.setItem(26-comingSoonIndex, race.guiDisplayItem())
+            comingSoonIndex += 1
+            return@forEach
+        }
         val item = race.guiDisplayItem()
+
         item.itemMeta = item.itemMeta.also {
             val key = NamespacedKey(magik, race.name())
+
             it.persistentDataContainer.set(key, PersistentDataType.STRING, race.name())
+
             magik.guiKeys.add(key)
         }
+
         inv.addItem(item)
     }
+
     p.openInventory(inv)
 }
 
@@ -83,6 +98,11 @@ abstract class Race(val magik: Magik) : Listener {
             magik.server.pluginManager.registerEvents(this, magik)
             magik.races.add(this)
         }
+    }
+
+    open fun cooldownUpdate() {}
+    open fun comingSoon(): Boolean {
+        return false
     }
 
     // run every second in the scheduler

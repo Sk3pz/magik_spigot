@@ -30,9 +30,9 @@ class Elf(magik: Magik) : Race(magik) {
         player.addPotionEffect(PotionEffect(PotionEffectType.JUMP, 2, 0, false, false))
         player.addPotionEffect(PotionEffect(PotionEffectType.WEAKNESS, 2, 0, false, false))
 
-        if (player.location.block.lightFromSky < 10 && player.location.block.lightFromBlocks < 7) {
-            player.addPotionEffect(PotionEffect(PotionEffectType.DARKNESS, 40, 1, false, false))
-        }
+//        if (player.location.block.lightFromSky < 10 && player.location.block.lightFromBlocks < 7) {
+//            player.addPotionEffect(PotionEffect(PotionEffectType.DARKNESS, 40, 1, false, false))
+//        }
     }
 
     override fun guiDisplayItem(): ItemStack {
@@ -47,7 +47,8 @@ class Elf(magik: Magik) : Race(magik) {
                 Component.text(colorize("&7- &aFaster than most")),
                 Component.text(colorize("&7- &aJumps higher")),
                 Component.text(colorize("&7- &cWeaker")),
-                Component.text(colorize("&7- &cTrouble seeing without proper light"))))
+                //Component.text(colorize("&7- &cTrouble seeing in the dark"))
+            ))
         }
 
         return item
