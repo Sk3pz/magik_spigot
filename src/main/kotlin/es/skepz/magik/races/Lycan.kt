@@ -7,7 +7,7 @@ import net.kyori.adventure.text.Component
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
 import org.bukkit.Sound
-import org.bukkit.enchantments.Enchantment
+import org.bukkit.World
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.entity.PlayerDeathEvent
@@ -21,18 +21,24 @@ import org.bukkit.persistence.PersistentDataType
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 
-class Elf(magik: Magik) : Race(magik) {
+class Lycan(magik: Magik) : Race(magik) {
 
-    private val bowKey = NamespacedKey(magik, "elven_bow")
+    private val clawKey = NamespacedKey(magik, "lycan_claw")
+    private val clawName = colorize("&cLycan Claw")
 
     override fun update(player: Player) {
-        player.addPotionEffect(PotionEffect(PotionEffectType.SPEED, 2, 0, false, false))
-        player.addPotionEffect(PotionEffect(PotionEffectType.JUMP, 2, 0, false, false))
-        player.addPotionEffect(PotionEffect(PotionEffectType.WEAKNESS, 2, 0, false, false))
+        val world = player.location.world
+        if (world.environment != World.Environment.NORMAL) {
 
-//        if (player.location.block.lightFromSky < 10 && player.location.block.lightFromBlocks < 7) {
-//            player.addPotionEffect(PotionEffect(PotionEffectType.DARKNESS, 40, 1, false, false))
-//        }
+            return
+        }
+        if (!player.location.world.isDayTime) {
+            // day
+
+        } else {
+            // night
+
+        }
     }
 
     override fun comingSoon(): Boolean {
@@ -40,19 +46,18 @@ class Elf(magik: Magik) : Race(magik) {
     }
 
     override fun guiDisplayItem(): ItemStack {
-        val item = ItemStack(Material.BOW, 1)
+        val item = ItemStack(Material.BONE, 1)
 
         item.itemMeta = item.itemMeta.also {
             it.isUnbreakable = true
-            it.displayName(Component.text(colorize("&2&lElf")))
+            it.displayName(Component.text(colorize("&4&l&kLycan")))
             it.lore(listOf(
-                Component.text(colorize("&7Great for players who prefer ranged PVP")),
-                Component.text(colorize("&7- &aLongbow: Shoots more powerful arrows")),
-                Component.text(colorize("&7- &aFaster than most")),
-                Component.text(colorize("&7- &a&k??????????")),
-                Component.text(colorize("&7- &aJumps higher")),
-                Component.text(colorize("&7- &cWeaker")),
-                Component.text(colorize("&7- &c&k??????????")),
+                Component.text(colorize("&7&kAll the benefits of a werewolf, without the wolf part")),
+                Component.text(colorize("&7- &a&kWolf Claw: Attacks stronger at night")),
+                Component.text(colorize("&7- &a&kExtremely strong at night")),
+                Component.text(colorize("&7- &a&kTame wolves with no bones")),
+                Component.text(colorize("&7- &c&kWeak during the day")),
+                Component.text(colorize("&7- &c&kEven weakerer in other dimensions (no moon)")),
                 //Component.text(colorize("&7- &cTrouble seeing in the dark"))
             ))
         }
@@ -60,36 +65,30 @@ class Elf(magik: Magik) : Race(magik) {
         return item
     }
 
-    private fun generateBow(): ItemStack {
-        val item = ItemStack(Material.BOW)
+    private fun generateClaw(): ItemStack {
+        val item = ItemStack(Material.PRISMARINE_SHARD)
         item.itemMeta = item.itemMeta.also {
-            it.displayName(Component.text(colorize("&2Longbow")))
-            it.lore(listOf(Component.text(colorize("&aBuilt with precision to do maximum damage"))))
-            it.isUnbreakable = true
-            it.persistentDataContainer.set(bowKey, PersistentDataType.DOUBLE, Math.PI)
-            it.addEnchant(Enchantment.ARROW_DAMAGE, 5, true)
-            it.addEnchant(Enchantment.ARROW_INFINITE, 1, true)
-            it.addEnchant(Enchantment.ARROW_KNOCKBACK, 4, true)
+            it.displayName(Component.text(clawName))
         }
         return item
     }
 
-    private fun checkBow(item: ItemStack): Boolean {
+    private fun checkClaw(item: ItemStack): Boolean {
         if (!item.hasItemMeta()) return false
-        return item.itemMeta.persistentDataContainer.has(bowKey, PersistentDataType.DOUBLE)
+        return item.itemMeta.persistentDataContainer.has(clawKey, PersistentDataType.DOUBLE)
     }
 
-    private fun Player.isElf(): Boolean {
-        return getRace(magik, this) is Elf
+    private fun Player.isLycan(): Boolean {
+        return getRace(magik, this) is Lycan
     }
 
     override fun name(): String {
-        return "Elf"
+        return "Lycan"
     }
 
     override fun set(player: Player) {
         val inv = player.inventory
-        inv.addItem(generateBow())
+        inv.addItem(generateClaw())
         if (!inv.contains(Material.ARROW)) {
             inv.addItem(ItemStack(Material.ARROW, 1))
         }
@@ -99,7 +98,7 @@ class Elf(magik: Magik) : Race(magik) {
         val inv = player.inventory
         inv.contents.forEach { item ->
             if (item == null) return@forEach
-            if (checkBow(item)) {
+            if (checkClaw(item)) {
                 inv.remove(item)
             }
         }
@@ -107,10 +106,10 @@ class Elf(magik: Magik) : Race(magik) {
 
     @EventHandler
     fun itemDrop(event: PlayerDropItemEvent) {
-        val player = event.player.takeIf { it.isElf() }
+        val player = event.player.takeIf { it.isLycan() }
             ?: return
 
-        if (checkBow(event.itemDrop.itemStack)) {
+        if (checkClaw(event.itemDrop.itemStack)) {
             event.isCancelled = true
             playSound(player, Sound.BLOCK_NOTE_BLOCK_BASS, 1, 0.1f)
         }
@@ -118,13 +117,13 @@ class Elf(magik: Magik) : Race(magik) {
 
     @EventHandler
     fun onClick(event: InventoryClickEvent) {
-        val player = (event.whoClicked as? Player)?.takeIf { it.isElf() }
+        val player = (event.whoClicked as? Player)?.takeIf { it.isLycan() }
             ?: return
 
         val item = event.currentItem
             ?: return
 
-        if (checkBow(item) && (event.action == InventoryAction.MOVE_TO_OTHER_INVENTORY || event.inventory.type == InventoryType.ANVIL)) {
+        if (checkClaw(item) && (event.action == InventoryAction.MOVE_TO_OTHER_INVENTORY || event.inventory.type == InventoryType.ANVIL)) {
             event.isCancelled = true
             playSound(player, Sound.BLOCK_NOTE_BLOCK_BASS, 1, 0.1f)
         }
@@ -132,12 +131,12 @@ class Elf(magik: Magik) : Race(magik) {
 
     @EventHandler
     fun onDeath(event: PlayerDeathEvent) {
-        if (!event.player.isElf()) return
+        if (!event.player.isLycan()) return
         val drops = event.drops
         val remove = mutableListOf<ItemStack>()
         drops.forEach { item ->
             if (item == null) return@forEach
-            if (checkBow(item)) {
+            if (checkClaw(item)) {
                 remove.add(item)
             }
         }
@@ -148,7 +147,7 @@ class Elf(magik: Magik) : Race(magik) {
 
     @EventHandler
     fun onRespawn(event: PlayerRespawnEvent) {
-        val player = event.player.takeIf { it.isElf() }
+        val player = event.player.takeIf { it.isLycan() }
             ?: return
 
         setRace(magik, player, this, false)

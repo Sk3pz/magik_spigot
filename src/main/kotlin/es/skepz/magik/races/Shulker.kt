@@ -7,7 +7,6 @@ import net.kyori.adventure.text.Component
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
 import org.bukkit.Sound
-import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.entity.PlayerDeathEvent
@@ -21,7 +20,7 @@ import org.bukkit.persistence.PersistentDataType
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 
-class Elf(magik: Magik) : Race(magik) {
+class Shulker(magik: Magik) : Race(magik) {
 
     private val bowKey = NamespacedKey(magik, "elven_bow")
 
@@ -40,19 +39,18 @@ class Elf(magik: Magik) : Race(magik) {
     }
 
     override fun guiDisplayItem(): ItemStack {
-        val item = ItemStack(Material.BOW, 1)
+        val item = ItemStack(Material.BARRIER, 1)
 
         item.itemMeta = item.itemMeta.also {
             it.isUnbreakable = true
-            it.displayName(Component.text(colorize("&2&lElf")))
+            it.displayName(Component.text(colorize("&d&l&kShulker")))
             it.lore(listOf(
-                Component.text(colorize("&7Great for players who prefer ranged PVP")),
-                Component.text(colorize("&7- &aLongbow: Shoots more powerful arrows")),
-                Component.text(colorize("&7- &aFaster than most")),
-                Component.text(colorize("&7- &a&k??????????")),
-                Component.text(colorize("&7- &aJumps higher")),
-                Component.text(colorize("&7- &cWeaker")),
-                Component.text(colorize("&7- &c&k??????????")),
+                Component.text(colorize("&7&k??????????????")),
+                Component.text(colorize("&7- &a&kinsert item here")),
+                Component.text(colorize("&7- &a&kExtremely strong at night")),
+                Component.text(colorize("&7- &a&kTame wolves with no bones")),
+                Component.text(colorize("&7- &c&kWeak during the day")),
+                Component.text(colorize("&7- &c&kEven weaker in other dimensions")),
                 //Component.text(colorize("&7- &cTrouble seeing in the dark"))
             ))
         }
@@ -62,15 +60,7 @@ class Elf(magik: Magik) : Race(magik) {
 
     private fun generateBow(): ItemStack {
         val item = ItemStack(Material.BOW)
-        item.itemMeta = item.itemMeta.also {
-            it.displayName(Component.text(colorize("&2Longbow")))
-            it.lore(listOf(Component.text(colorize("&aBuilt with precision to do maximum damage"))))
-            it.isUnbreakable = true
-            it.persistentDataContainer.set(bowKey, PersistentDataType.DOUBLE, Math.PI)
-            it.addEnchant(Enchantment.ARROW_DAMAGE, 5, true)
-            it.addEnchant(Enchantment.ARROW_INFINITE, 1, true)
-            it.addEnchant(Enchantment.ARROW_KNOCKBACK, 4, true)
-        }
+
         return item
     }
 
@@ -84,7 +74,7 @@ class Elf(magik: Magik) : Race(magik) {
     }
 
     override fun name(): String {
-        return "Elf"
+        return "Shulker"
     }
 
     override fun set(player: Player) {

@@ -141,11 +141,15 @@ class Aquarian(magik: Magik) : Race(magik) {
     fun onDeath(event: PlayerDeathEvent) {
         if (!event.player.isAquarian()) return
         val drops = event.drops
+        val remove = mutableListOf<ItemStack>()
         drops.forEach { item ->
             if (item == null) return@forEach
             if (checkTrident(item)) {
-                drops.remove(item)
+                remove.add(item)
             }
+        }
+        remove.forEach { item ->
+            drops.remove(item)
         }
     }
 

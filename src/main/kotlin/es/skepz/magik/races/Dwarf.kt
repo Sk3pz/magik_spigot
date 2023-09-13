@@ -137,7 +137,6 @@ class Dwarf(magik: Magik) : Race(magik) {
         }
         playerMode.remove(player.uniqueId)
         vmCooldown.remove(player)
-        smeltingPower.remove(player.uniqueId)
     }
 
     private fun generatePickaxe(): ItemStack {
@@ -270,7 +269,8 @@ class Dwarf(magik: Magik) : Race(magik) {
                 type == Material.NETHER_QUARTZ_ORE ||
                 type == Material.NETHER_GOLD_ORE ||
                 type == Material.DRIPSTONE_BLOCK ||
-                type == Material.COBBLESTONE
+                type == Material.COBBLESTONE ||
+                type == Material.ANCIENT_DEBRIS
     }
 
     private fun vineBlockBreak(startBlock: Block, type: Material, dropLocation: Location) {
@@ -370,6 +370,9 @@ class Dwarf(magik: Magik) : Race(magik) {
                     Material.NETHERRACK -> {
                         drop = ItemStack(Material.NETHER_BRICK)
                     }
+                    Material.ANCIENT_DEBRIS -> {
+                        drop = ItemStack(Material.NETHERITE_SCRAP)
+                    }
                     else -> {}
                 }
 
@@ -425,7 +428,8 @@ class Dwarf(magik: Magik) : Race(magik) {
         val item = event.currentItem
             ?: return
 
-        if (checkPickaxe(item) && (event.action == InventoryAction.MOVE_TO_OTHER_INVENTORY || event.inventory.type == InventoryType.ANVIL)) {
+        if (checkPickaxe(item) && (event.action == InventoryAction.MOVE_TO_OTHER_INVENTORY ||
+                    (event.inventory.type == InventoryType.ANVIL || event.inventory.type == InventoryType.GRINDSTONE))) {
             event.isCancelled = true
             playSound(player, Sound.BLOCK_NOTE_BLOCK_BASS, 1, 0.1f)
         }
@@ -435,11 +439,15 @@ class Dwarf(magik: Magik) : Race(magik) {
     fun onDeath(event: PlayerDeathEvent) {
         if (!event.player.isDwarf()) return
         val drops = event.drops
+        val remove = mutableListOf<ItemStack>()
         drops.forEach { item ->
             if (item == null) return@forEach
             if (checkPickaxe(item)) {
-                drops.remove(item)
+                remove.add(item)
             }
+        }
+        remove.forEach { item ->
+            drops.remove(item)
         }
     }
 

@@ -38,13 +38,15 @@ class Magik : JavaPlugin() {
         Avian(this).register()
         Druid(this).register()
         Dwarf(this).register()
-        Elf(this).register()
         Orc(this).register()
-
-        // REMEMBER TO CHANGE THE GUI ITEMS FOR NEW RACES!
         Enderian(this).register()
         Goblin(this).register()
         Blazeborn(this).register()
+
+        // coming soon
+        Shulker(this).register()
+        Lycan(this).register()
+        Elf(this).register()
 
         Human(this).register()
 

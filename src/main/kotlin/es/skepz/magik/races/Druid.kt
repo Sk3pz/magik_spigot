@@ -275,7 +275,7 @@ class Druid(magik: Magik) : Race(magik) {
         useStick(player)
     }
 
-    @EventHandler(ignoreCancelled = true)
+    @EventHandler
     fun onBreak(event: BlockBreakEvent) {
         val player = event.player.takeIf { it.isDruid() }
             ?: return
@@ -337,11 +337,15 @@ class Druid(magik: Magik) : Race(magik) {
     fun onDeath(event: PlayerDeathEvent) {
         if (!event.player.isDruid()) return
         val drops = event.drops
+        val remove = mutableListOf<ItemStack>()
         drops.forEach { item ->
             if (item == null) return@forEach
             if (checkStick(item)) {
-                drops.remove(item)
+                remove.add(item)
             }
+        }
+        remove.forEach { item ->
+            drops.remove(item)
         }
     }
 

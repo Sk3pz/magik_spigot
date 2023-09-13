@@ -36,15 +36,10 @@ class Human(magik: Magik) : Race(magik) {
     }
 
     override fun set(player: Player) {
-        // TODO
+
     }
 
     override fun remove(player: Player) {
-        // TODO
-    }
-
-    @EventHandler
-    fun onPlayerInteract(event: PlayerInteractEvent) {
 
     }
 }
