@@ -1,5 +1,6 @@
 package es.skepz.magik.races
 
+import es.skepz.magik.CustomItem
 import es.skepz.magik.Magik
 import es.skepz.magik.tuodlib.colorize
 import es.skepz.magik.tuodlib.displayParticles
@@ -31,24 +32,18 @@ import java.util.*
 
 class Goblin(magik: Magik) : Race(magik) {
 
-    private val swordKey = NamespacedKey(magik, "goblin_knife")
     private val swordName = colorize("&eDagger")
 
-    private val cooldownMap = mutableMapOf<Player, Int>()
-    private val defaultCooldown = 10
+    private val sword = CustomItem(magik, Material.IRON_SWORD, 1, swordName,
+        listOf("&aQuick and efficient strikes", "&8[&6Right Click&8] &7to dash."),
+        "goblin_knife", true,
+        mutableMapOf(Pair(Enchantment.DAMAGE_ALL, 5)))
 
-    override fun cooldownUpdate() {
-        cooldownMap.forEach { (plr, seconds) ->
-            if (seconds == 0) {
-                cooldownMap.remove(plr)
-                val stick = findSword(plr) ?: return@forEach
-                updateData(plr, stick)
-                return@forEach
-            }
-            cooldownMap[plr] = seconds - 1
-            val stick = findSword(plr) ?: return@forEach
-            updateData(plr, stick)
-        }
+    private val defaultCooldown = 3
+
+    override fun cooldownUpdate(player: Player, seconds: Int) {
+        val itm = sword.find(player.inventory) ?: return
+        updateData(player, itm)
     }
 
     override fun update(player: Player) {
@@ -61,28 +56,24 @@ class Goblin(magik: Magik) : Race(magik) {
         item.itemMeta = item.itemMeta.also {
             it.isUnbreakable = true
             it.displayName(Component.text(colorize("&c&lGoblin")))
-            it.lore(listOf(
-                Component.text(colorize("&7Great for players who love to move quick and make fast attacks")),
-                Component.text(colorize("&7- &aDagger: attack fast and efficiently")),
-                Component.text(colorize("&7- &aAmong the quickest around")),
-                Component.text(colorize("&7- &aImmune to poison")),
-                Component.text(colorize("&7- &cCan only wear leather armor")),
-                Component.text(colorize("&7- &c6 max hearts"))))
+            it.lore(
+                listOf(
+                    Component.text(colorize("&7Great for players who love to move quick and make fast attacks")),
+                    Component.text(colorize("&7- &aDagger: attack fast and efficiently")),
+                    Component.text(colorize("&7- &aAmong the quickest around")),
+                    Component.text(colorize("&7- &aImmune to poison")),
+                    Component.text(colorize("&7- &cCan only wear leather armor")),
+                    Component.text(colorize("&7- &c6 max hearts"))
+                )
+            )
         }
 
         return item
     }
 
     private fun generateSword(): ItemStack {
-        val item = ItemStack(Material.IRON_SWORD)
+        val item = sword.generate()
         item.itemMeta = item.itemMeta.also {
-            it.displayName(Component.text(swordName))
-            it.lore(listOf(
-                Component.text(colorize("&aQuick and efficient strikes")),
-                Component.text(colorize("&8[&6Right Click&8] &7to dash."))
-            ))
-            it.isUnbreakable = true
-            it.persistentDataContainer.set(swordKey, PersistentDataType.DOUBLE, Math.PI)
             it.addEnchant(Enchantment.DAMAGE_ALL, 5, true)
             it.addAttributeModifier(Attribute.GENERIC_ATTACK_SPEED,
                 AttributeModifier(UUID.randomUUID(), "goblin_modifier", 0.8, AttributeModifier.Operation.ADD_NUMBER))
@@ -91,25 +82,10 @@ class Goblin(magik: Magik) : Race(magik) {
         return item
     }
 
-    private fun findSword(player: Player) : ItemStack? {
-        player.inventory.contents.forEach {
-            if (it == null) return@forEach
-            if (checkSword(it)) {
-                return it
-            }
-        }
-        return null
-    }
-
-    private fun checkSword(item: ItemStack): Boolean {
-        if (!item.hasItemMeta()) return false
-        return item.itemMeta.persistentDataContainer.has(swordKey, PersistentDataType.DOUBLE)
-    }
-
     private fun updateData(player: Player, sword: ItemStack) {
         sword.itemMeta = sword.itemMeta.also {
-            if (cooldownMap.containsKey(player)) {
-                it.displayName(Component.text(colorize("$swordName &8[&c${cooldownMap[player] ?: 0}&8]")))
+            if (magik.cooldowns.containsKey(player)) {
+                it.displayName(Component.text(colorize("$swordName &8[&c${magik.cooldowns[player] ?: 1}&8]")))
             } else {
                 it.displayName(Component.text(colorize(swordName)))
             }
@@ -157,7 +133,7 @@ class Goblin(magik: Magik) : Race(magik) {
         val inv = player.inventory
         inv.contents.forEach { item ->
             if (item == null) return@forEach
-            if (checkSword(item)) {
+            if (sword.check(item)) {
                 inv.remove(item)
             }
         }
@@ -194,8 +170,8 @@ class Goblin(magik: Magik) : Race(magik) {
             return
         }
 
-        if (checkSword(item) && event.action == Action.RIGHT_CLICK_AIR) {
-            val cooldown = cooldownMap[player]
+        if (sword.check(item) && event.action == Action.RIGHT_CLICK_AIR) {
+            val cooldown = magik.cooldowns[player]
             if (cooldown != null) {
                 sendMessage(player, "&cYou can't use this item for another $cooldown seconds!")
                 playSound(player, Sound.BLOCK_NOTE_BLOCK_BASS, 1, 0.1f)
@@ -211,7 +187,7 @@ class Goblin(magik: Magik) : Race(magik) {
             direction.y *= 0.0
 
             player.velocity = direction
-            cooldownMap[player] = defaultCooldown
+            magik.cooldowns[player] = defaultCooldown
             updateData(player, item)
         }
 
@@ -232,7 +208,7 @@ class Goblin(magik: Magik) : Race(magik) {
         val player = event.player.takeIf { it.isGoblin() }
             ?: return
 
-        if (checkSword(event.itemDrop.itemStack)) {
+        if (sword.check(event.itemDrop.itemStack)) {
             event.isCancelled = true
             playSound(player, Sound.BLOCK_NOTE_BLOCK_BASS, 1, 0.1f)
         }
@@ -246,7 +222,7 @@ class Goblin(magik: Magik) : Race(magik) {
         val item = event.currentItem
             ?: return
 
-        if (checkSword(item) && (event.action == InventoryAction.MOVE_TO_OTHER_INVENTORY || event.inventory.type == InventoryType.ANVIL)) {
+        if (sword.check(item) && event.inventory.type != InventoryType.CRAFTING) {
             event.isCancelled = true
             playSound(player, Sound.BLOCK_NOTE_BLOCK_BASS, 1, 0.1f)
         }
@@ -277,7 +253,7 @@ class Goblin(magik: Magik) : Race(magik) {
         val remove = mutableListOf<ItemStack>()
         drops.forEach { item ->
             if (item == null) return@forEach
-            if (checkSword(item)) {
+            if (sword.check(item)) {
                 remove.add(item)
             }
         }

@@ -1,5 +1,6 @@
 package es.skepz.magik.commands
 
+import es.skepz.magik.Backpack
 import es.skepz.magik.Magik
 import es.skepz.magik.races.*
 import es.skepz.magik.tuodlib.sendMessage
@@ -8,11 +9,10 @@ import org.bukkit.Bukkit
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
 
-class MagikCommand(val magik: Magik) : CoreCMD(magik, "magik", "&c/magik <&7set&c|&7check&c|&7inv&c>",
+class MagikCommand(val magik: Magik) : CoreCMD(magik, "magik", "&c/magik <&7set&c|&7check&c|&7inv&c|&7give&c>",
     1, "magik.set_race", true, true) {
 
     override fun Context.run() {
-
         val player = sender as Player
 
         when (args[0].lowercase()) {
@@ -53,6 +53,28 @@ class MagikCommand(val magik: Magik) : CoreCMD(magik, "magik", "&c/magik <&7set&
 
                 sendMessage(player, "&b${target.name}&7's race is &b${race.name()}&7.")
             }
+
+            "give" -> {
+                if (args.size < 3) {
+                    return invalidUse()
+                }
+
+                val target = Bukkit.getPlayer(args[1])
+                    ?: return sendMessage(sender, "&cThat player either isn't online or doesn't exist!")
+
+                val item = args[2].lowercase()
+
+                when (item) {
+                    "strange_rock" -> {
+                        target.inventory.addItem(magik.specialItems.changeItem.generate())
+                    }
+                    "backpack" -> {
+                        target.inventory.addItem(Backpack(magik))
+                    }
+                }
+            }
+
+            else -> invalidUse()
         }
     }
 
@@ -64,9 +86,11 @@ class MagikCommand(val magik: Magik) : CoreCMD(magik, "magik", "&c/magik <&7set&
         }
 
         return when(args.size) {
-            1 -> listOf("set", "check", "inv")
+            1 -> listOf("set", "check", "inv", "give")
             2 -> magik.server.onlinePlayers.map { it.name }
-            3 -> getRaceNames(magik)
+            3 -> if (args[0].equals("give", true))
+                listOf("strange_rock", "backpack")
+                else getRaceNames(magik)
             else -> emptyList()
         }.filter { it.startsWith(args.last(), true) }
     }

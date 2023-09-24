@@ -2,6 +2,7 @@ package es.skepz.magik.races
 
 import es.skepz.magik.Magik
 import es.skepz.magik.tuodlib.colorize
+import es.skepz.magik.tuodlib.sendMessage
 import es.skepz.magik.tuodlib.serverBroadcast
 import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
@@ -26,8 +27,15 @@ fun start(magik: Magik) {
         }
     }, 0L, 1L) // run every tick
     Bukkit.getScheduler().runTaskTimer(magik, Runnable {
-        for (r in magik.races) {
-            r.cooldownUpdate()
+        magik.cooldowns.forEach { (player, seconds) ->
+            val race = getRace(magik, player) ?: return@forEach
+            if (seconds <= 1) {
+                magik.cooldowns.remove(player)
+                race.cooldownUpdate(player, seconds)
+                return@forEach
+            }
+            magik.cooldowns[player] = seconds - 1
+            race.cooldownUpdate(player, seconds)
         }
     }, 0L, 20L) // run every second
 }
@@ -100,7 +108,7 @@ abstract class Race(val magik: Magik) : Listener {
         }
     }
 
-    open fun cooldownUpdate() {}
+    open fun cooldownUpdate(player: Player, seconds: Int) {}
     open fun comingSoon(): Boolean {
         return false
     }

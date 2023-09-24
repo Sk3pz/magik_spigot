@@ -1,5 +1,6 @@
 package es.skepz.magik.races
 
+import es.skepz.magik.CustomItem
 import es.skepz.magik.Magik
 import es.skepz.magik.tuodlib.colorize
 import es.skepz.magik.tuodlib.playSound
@@ -24,14 +25,17 @@ import org.bukkit.potion.PotionEffectType
 class Orc(magik: Magik) : Race(magik) {
 
     private val maxHealth = 40.0
-    private val axeKey = NamespacedKey(magik, "orc_axe")
+    private val axe = CustomItem(magik, Material.IRON_AXE, 1, "&4Battle Axe",
+        listOf("&cME ORC. ME DESTROY YOU."),
+        "orc_axe", true,
+        mapOf(Pair(Enchantment.DAMAGE_ALL, 5), Pair(Enchantment.KNOCKBACK, 2)))
 
     override fun update(player: Player) {
         player.addPotionEffect(PotionEffect(PotionEffectType.JUMP, 2, 1, false, false))
         player.addPotionEffect(PotionEffect(PotionEffectType.INCREASE_DAMAGE, 2, 0, false, false))
         player.addPotionEffect(PotionEffect(PotionEffectType.SLOW, 2, 1, false, false))
 
-        if (checkAxe(player.inventory.itemInMainHand)) {
+        if (axe.check(player.inventory.itemInMainHand)) {
             player.addPotionEffect(PotionEffect(PotionEffectType.SLOW_DIGGING, 2, 0, false, false))
         }
     }
@@ -56,24 +60,6 @@ class Orc(magik: Magik) : Race(magik) {
         return item
     }
 
-    private fun generateAxe(): ItemStack {
-        val item = ItemStack(Material.IRON_AXE)
-        item.itemMeta = item.itemMeta.also {
-            it.displayName(Component.text(colorize("&4Battle Axe")))
-            it.lore(listOf(Component.text(colorize("&cME ORC. ME DESTROY YOU."))))
-            it.isUnbreakable = true
-            it.persistentDataContainer.set(axeKey, PersistentDataType.DOUBLE, Math.PI)
-            it.addEnchant(Enchantment.DAMAGE_ALL, 7, true)
-            it.addEnchant(Enchantment.KNOCKBACK, 2, true)
-        }
-        return item
-    }
-
-    private fun checkAxe(item: ItemStack): Boolean {
-        if (!item.hasItemMeta()) return false
-        return item.itemMeta.persistentDataContainer.has(axeKey, PersistentDataType.DOUBLE)
-    }
-
     private fun Player.isOrc(): Boolean {
         return getRace(magik, this) is Orc
     }
@@ -84,7 +70,7 @@ class Orc(magik: Magik) : Race(magik) {
 
     override fun set(player: Player) {
         player.maxHealth = maxHealth
-        player.inventory.addItem(generateAxe())
+        player.inventory.addItem(axe.generate())
     }
 
     override fun remove(player: Player) {
@@ -92,7 +78,7 @@ class Orc(magik: Magik) : Race(magik) {
         val inv = player.inventory
         inv.contents.forEach { item ->
             if (item == null) return@forEach
-            if (checkAxe(item)) {
+            if (axe.check(item)) {
                 inv.remove(item)
             }
         }
@@ -103,7 +89,7 @@ class Orc(magik: Magik) : Race(magik) {
         val player = event.player.takeIf { it.isOrc() }
             ?: return
 
-        if (checkAxe(event.itemDrop.itemStack)) {
+        if (axe.check(event.itemDrop.itemStack)) {
             event.isCancelled = true
             playSound(player, Sound.BLOCK_NOTE_BLOCK_BASS, 1, 0.1f)
         }
@@ -117,7 +103,7 @@ class Orc(magik: Magik) : Race(magik) {
         val item = event.currentItem
             ?: return
 
-        if (checkAxe(item) && (event.action == InventoryAction.MOVE_TO_OTHER_INVENTORY || event.inventory.type == InventoryType.ANVIL)) {
+        if (axe.check(item) && event.inventory.type != InventoryType.CRAFTING) {
             event.isCancelled = true
             playSound(player, Sound.BLOCK_NOTE_BLOCK_BASS, 1, 0.1f)
         }
@@ -130,7 +116,7 @@ class Orc(magik: Magik) : Race(magik) {
         val remove = mutableListOf<ItemStack>()
         drops.forEach { item ->
             if (item == null) return@forEach
-            if (checkAxe(item)) {
+            if (axe.check(item)) {
                 remove.add(item)
             }
         }

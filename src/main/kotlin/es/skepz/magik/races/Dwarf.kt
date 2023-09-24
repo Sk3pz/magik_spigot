@@ -1,5 +1,6 @@
 package es.skepz.magik.races
 
+import es.skepz.magik.CustomItem
 import es.skepz.magik.Magik
 import es.skepz.magik.tuodlib.colorize
 import es.skepz.magik.tuodlib.dropItem
@@ -33,11 +34,13 @@ import kotlin.math.pow
 class Dwarf(magik: Magik) : Race(magik) {
 
     enum class PickaxeMode { Mine, Fast, Vein, Silk, Smelt }
-    private val pxKey = NamespacedKey(magik, "dwarven_pickaxe")
+    private val pickaxe = CustomItem(magik, Material.NETHERITE_PICKAXE, 1, "&cDwarven Pickaxe &8(&6mine&8)",
+        listOf("&4Forged in the fires of the nether", "&8[&6Right Click&8] &7while holding to change modes."),
+        "dwarven_pickaxe", true,
+        mutableMapOf(Pair(Enchantment.DAMAGE_ALL, 5), Pair(Enchantment.LOOT_BONUS_BLOCKS, 3)))
 
     private val playerMode = mutableMapOf<UUID, PickaxeMode>()
     private val smeltingPower = mutableMapOf<UUID, Int>()
-    private val vmCooldown = mutableMapOf<Player, Int>()
     private val veinMineCooldown = 30
 
     private val maxHealth = 24.0
@@ -49,18 +52,9 @@ class Dwarf(magik: Magik) : Race(magik) {
     private val coalBlockPower = 30
     private val lavaPower = 50
 
-    override fun cooldownUpdate() {
-        vmCooldown.forEach { (plr, seconds) ->
-            val pickaxe = getPickaxe(plr) ?: return@forEach
-            val mode = playerMode[plr.uniqueId] ?: return@forEach
-            if (seconds == 0) {
-                vmCooldown.remove(plr)
-                updateName(plr, pickaxe, mode)
-                return@forEach
-            }
-            vmCooldown[plr] = seconds - 1
-            updateName(plr, pickaxe, mode)
-        }
+    override fun cooldownUpdate(player: Player, seconds: Int) {
+        val itm = pickaxe.find(player.inventory) ?: return
+        updateName(player, itm, getMode(player))
     }
 
     override fun update(player: Player) {
@@ -92,16 +86,6 @@ class Dwarf(magik: Magik) : Race(magik) {
         return item
     }
 
-    private fun getPickaxe(player: Player) : ItemStack? {
-        player.inventory.contents.forEach {
-            if (it == null) return@forEach
-            if (checkPickaxe(it)) {
-                return it
-            }
-        }
-        return null
-    }
-
     private fun getMode(player: Player): PickaxeMode {
         val mode = playerMode[player.uniqueId]
             if (mode == null) {
@@ -123,7 +107,7 @@ class Dwarf(magik: Magik) : Race(magik) {
         player.maxHealth = maxHealth
         playerMode[player.uniqueId] = PickaxeMode.Mine
 
-        player.inventory.addItem(generatePickaxe())
+        player.inventory.addItem(pickaxe.generate())
     }
 
     override fun remove(player: Player) {
@@ -131,33 +115,12 @@ class Dwarf(magik: Magik) : Race(magik) {
         val inv = player.inventory
         inv.contents.forEach { item ->
             if (item == null) return@forEach
-            if (checkPickaxe(item)) {
+            if (pickaxe.check(item)) {
                 inv.remove(item)
             }
         }
         playerMode.remove(player.uniqueId)
-        vmCooldown.remove(player)
-    }
-
-    private fun generatePickaxe(): ItemStack {
-        val pick = ItemStack(Material.NETHERITE_PICKAXE)
-        pick.itemMeta = pick.itemMeta.also {
-            it.displayName(Component.text(colorize("&cDwarven Pickaxe &8(&6mine&8)")))
-            it.isUnbreakable = true
-            it.persistentDataContainer.set(pxKey, PersistentDataType.DOUBLE, Math.PI)
-            it.addEnchant(Enchantment.DAMAGE_ALL, 5, true)
-            it.addEnchant(Enchantment.LOOT_BONUS_BLOCKS, 3, true)
-            it.lore(listOf(
-                Component.text(colorize("&4Forged in the fires of the nether")),
-                Component.text(colorize("&8[&6Right Click&8] &7while holding to change modes."))
-            ))
-        }
-        return pick
-    }
-
-    private fun checkPickaxe(item: ItemStack): Boolean {
-        if (!item.hasItemMeta()) return false
-        return item.itemMeta.persistentDataContainer.has(pxKey, PersistentDataType.DOUBLE)
+        magik.cooldowns.remove(player)
     }
 
     private fun modeToName(player: Player, mode: PickaxeMode): String {
@@ -165,7 +128,7 @@ class Dwarf(magik: Magik) : Race(magik) {
             PickaxeMode.Mine  -> "&8(&6mine&8)"
             PickaxeMode.Fast  -> "&8(&6fast&8)"
             PickaxeMode.Vein  -> {
-                val cooldown = vmCooldown[player]
+                val cooldown = magik.cooldowns[player]
                 if (cooldown != null) {
                     "&8(&6vein &8[&c$cooldown&8])"
                 } else {
@@ -240,7 +203,7 @@ class Dwarf(magik: Magik) : Race(magik) {
         val item = event.item
             ?: return
 
-        if (!checkPickaxe(item)) {
+        if (!pickaxe.check(item)) {
             return
         }
 
@@ -319,7 +282,7 @@ class Dwarf(magik: Magik) : Race(magik) {
 
         if (player.gameMode != GameMode.SURVIVAL) return
         val pick = player.inventory.itemInMainHand
-        if (!checkPickaxe(pick)) return
+        if (!pickaxe.check(pick)) return
 
         val mode = playerMode[player.uniqueId] ?: PickaxeMode.Mine
 
@@ -327,7 +290,7 @@ class Dwarf(magik: Magik) : Race(magik) {
 
         when (getMode(player)) {
             PickaxeMode.Vein -> {
-                val cooldown = vmCooldown[player]
+                val cooldown = magik.cooldowns[player]
                 if (cooldown != null) {
                     sendMessage(player, "&cYou can't use that mode for another $cooldown seconds!")
                     playSound(player, Sound.BLOCK_NOTE_BLOCK_BASS, 1, 0.1f)
@@ -337,7 +300,7 @@ class Dwarf(magik: Magik) : Race(magik) {
                 if (isVeinMiningBlock(block.type)) {
                     event.isDropItems = false
                     vineBlockBreak(block, block.type, block.location.add(0.5, 0.5, 0.5))
-                    vmCooldown[player] = veinMineCooldown
+                    magik.cooldowns[player] = veinMineCooldown
                     updateName(player, pick, mode)
                 } else {
                     sendMessage(player, "&cYou can't vein mine this block!")
@@ -380,13 +343,43 @@ class Dwarf(magik: Magik) : Race(magik) {
                     var power = smeltingPower[player.uniqueId] ?: 0
                     if (power == 0) {
                         if (inv.contains(Material.COAL)) {
-                            inv.remove(Material.COAL)
+                            for (it in inv.contents) {
+                                if (it == null) continue
+                                if (it.type == Material.COAL) {
+                                    if (it.amount == 1) {
+                                        inv.remove(it)
+                                    } else {
+                                        it.amount -= 1
+                                    }
+                                    break
+                                }
+                            }
                             power = coalPower
-                        } else if (inv.contains(Material.COAL)) {
-                            inv.remove(Material.CHARCOAL)
+                        } else if (inv.contains(Material.CHARCOAL)) {
+                            for (it in inv.contents) {
+                                if (it == null) continue
+                                if (it.type == Material.CHARCOAL) {
+                                    if (it.amount == 1) {
+                                        inv.remove(it)
+                                    } else {
+                                        it.amount -= 1
+                                    }
+                                    break
+                                }
+                            }
                             power = charcoalPower
                         } else if (inv.contains(Material.COAL_BLOCK)) {
-                            inv.remove(Material.COAL_BLOCK)
+                            for (it in inv.contents) {
+                                if (it == null) continue
+                                if (it.type == Material.COAL_BLOCK) {
+                                    if (it.amount == 1) {
+                                        inv.remove(it)
+                                    } else {
+                                        it.amount -= 1
+                                    }
+                                    break
+                                }
+                            }
                             power = coalBlockPower
                         } else if (inv.contains(Material.LAVA_BUCKET)) {
                             inv.remove(Material.LAVA_BUCKET)
@@ -414,7 +407,7 @@ class Dwarf(magik: Magik) : Race(magik) {
         val player = event.player.takeIf { it.isDwarf() }
             ?: return
 
-        if (checkPickaxe(event.itemDrop.itemStack)) {
+        if (pickaxe.check(event.itemDrop.itemStack)) {
             event.isCancelled = true
             playSound(player, Sound.BLOCK_NOTE_BLOCK_BASS, 1, 0.1f)
         }
@@ -428,8 +421,7 @@ class Dwarf(magik: Magik) : Race(magik) {
         val item = event.currentItem
             ?: return
 
-        if (checkPickaxe(item) && (event.action == InventoryAction.MOVE_TO_OTHER_INVENTORY ||
-                    (event.inventory.type == InventoryType.ANVIL || event.inventory.type == InventoryType.GRINDSTONE))) {
+        if (pickaxe.check(item) && event.inventory.type != InventoryType.CRAFTING) {
             event.isCancelled = true
             playSound(player, Sound.BLOCK_NOTE_BLOCK_BASS, 1, 0.1f)
         }
@@ -442,7 +434,7 @@ class Dwarf(magik: Magik) : Race(magik) {
         val remove = mutableListOf<ItemStack>()
         drops.forEach { item ->
             if (item == null) return@forEach
-            if (checkPickaxe(item)) {
+            if (pickaxe.check(item)) {
                 remove.add(item)
             }
         }

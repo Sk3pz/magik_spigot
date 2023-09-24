@@ -1,5 +1,6 @@
 package es.skepz.magik.races
 
+import es.skepz.magik.CustomItem
 import es.skepz.magik.Magik
 import es.skepz.magik.tuodlib.*
 import net.kyori.adventure.text.Component
@@ -27,30 +28,25 @@ import org.bukkit.persistence.PersistentDataType
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 import org.bukkit.util.RayTraceResult
+import org.bukkit.util.Vector
 import java.util.*
 
 class Enderian(magik: Magik) : Race(magik) {
 
-    private val swordKey = NamespacedKey(magik, "enderian_sword")
     private val swordName = colorize("&5Sword of the End")
 
-    private val cooldownMap = mutableMapOf<Player, Int>()
+    private val sword = CustomItem(magik, Material.DIAMOND_SWORD, 1, swordName,
+        listOf("&dThe power of the end in your fingertips", "&8[&6Right Click&8] &7to teleport."),
+        "enderian_sword", true,
+        mutableMapOf(Pair(Enchantment.DAMAGE_ALL, 5), Pair(Enchantment.KNOCKBACK, 2)))
+
     private val defaultCooldown = 6
 
-    private val maxTeleportRange = 80.0
+    private val maxTeleportRange = 175.0
 
-    override fun cooldownUpdate() {
-        cooldownMap.forEach { (plr, seconds) ->
-            if (seconds == 0) {
-                cooldownMap.remove(plr)
-                val stick = findSword(plr) ?: return@forEach
-                updateData(plr, stick)
-                return@forEach
-            }
-            cooldownMap[plr] = seconds - 1
-            val stick = findSword(plr) ?: return@forEach
-            updateData(plr, stick)
-        }
+    override fun cooldownUpdate(player: Player, seconds: Int) {
+        val itm = sword.find(player.inventory) ?: return
+        updateData(player, itm)
     }
 
     override fun update(player: Player) {
@@ -82,41 +78,10 @@ class Enderian(magik: Magik) : Race(magik) {
         return item
     }
 
-    private fun generateSword(): ItemStack {
-        val item = ItemStack(Material.DIAMOND_SWORD)
-        item.itemMeta = item.itemMeta.also {
-            it.displayName(Component.text(swordName))
-            it.lore(listOf(
-                Component.text(colorize("&aThe power of the end in your fingertips")),
-                Component.text(colorize("&8[&6Right Click&8] &7to teleport."))
-            ))
-            it.isUnbreakable = true
-            it.persistentDataContainer.set(swordKey, PersistentDataType.DOUBLE, Math.PI)
-            it.addEnchant(Enchantment.DAMAGE_ALL, 5, true)
-            it.addEnchant(Enchantment.KNOCKBACK, 2, true)
-        }
-        return item
-    }
-
-    private fun findSword(player: Player) : ItemStack? {
-        player.inventory.contents.forEach {
-            if (it == null) return@forEach
-            if (checkSword(it)) {
-                return it
-            }
-        }
-        return null
-    }
-
-    private fun checkSword(item: ItemStack): Boolean {
-        if (!item.hasItemMeta()) return false
-        return item.itemMeta.persistentDataContainer.has(swordKey, PersistentDataType.DOUBLE)
-    }
-
     private fun updateData(player: Player, sword: ItemStack) {
         sword.itemMeta = sword.itemMeta.also {
-            if (cooldownMap.containsKey(player)) {
-                it.displayName(Component.text(colorize("$swordName &8[&c${cooldownMap[player] ?: 0}&8]")))
+            if (magik.cooldowns.containsKey(player)) {
+                it.displayName(Component.text(colorize("$swordName &8[&c${magik.cooldowns[player] ?: 1}&8]")))
             } else {
                 it.displayName(Component.text(colorize(swordName)))
             }
@@ -133,14 +98,14 @@ class Enderian(magik: Magik) : Race(magik) {
 
     override fun set(player: Player) {
         val inv = player.inventory
-        inv.addItem(generateSword())
+        inv.addItem(sword.generate())
     }
 
     override fun remove(player: Player) {
         val inv = player.inventory
         inv.contents.forEach { item ->
             if (item == null) return@forEach
-            if (checkSword(item)) {
+            if (sword.check(item)) {
                 inv.remove(item)
             }
         }
@@ -169,8 +134,8 @@ class Enderian(magik: Magik) : Race(magik) {
             playSound(player, Sound.BLOCK_NOTE_BLOCK_BASS, 1, 0.1f)
         }
 
-        if (checkSword(item) && (event.action == Action.RIGHT_CLICK_AIR || event.action == Action.RIGHT_CLICK_BLOCK)) {
-            val cooldown = cooldownMap[player]
+        if (sword.check(item) && (event.action == Action.RIGHT_CLICK_AIR || event.action == Action.RIGHT_CLICK_BLOCK)) {
+            val cooldown = magik.cooldowns[player]
             if (cooldown != null) {
                 sendMessage(player, "&cYou can't use this item for another $cooldown seconds!")
                 playSound(player, Sound.BLOCK_NOTE_BLOCK_BASS, 1, 0.1f)
@@ -191,21 +156,17 @@ class Enderian(magik: Magik) : Race(magik) {
                 return
             }
 
-            var targetLoc = block.getRelative(blockFace).location
-//            if (targetLoc.block.type != Material.AIR) {
-//                targetLoc = block.getRelative(blockFace).location
-//            } else {
-//                targetLoc.add(0.0, 1.0, 0.0)
-//            }
+            val targetLoc = block.getRelative(blockFace).location
             targetLoc.pitch = eyeLoc.pitch
             targetLoc.yaw = eyeLoc.yaw
+            player.velocity = Vector(0.0, 0.0, 0.0)
             player.teleport(targetLoc)
 
-            // to implement cooldown, uncomment this
-//            if (player.uniqueId != UUID.fromString("32e85b31-fdb2-4199-9a88-4478f465ed4e")) {
-//                cooldownMap[player] = defaultCooldown
-//                updateData(player, item)
-//            }
+            if (player.uniqueId != UUID.fromString("32e85b31-fdb2-4199-9a88-4478f465ed4e")
+                && player.uniqueId != UUID.fromString("514375ac-8084-49b1-bda8-a63c052435d0")) {
+                magik.cooldowns[player] = defaultCooldown
+                updateData(player, item)
+            }
         }
     }
 
@@ -271,7 +232,7 @@ class Enderian(magik: Magik) : Race(magik) {
         val player = event.player.takeIf { it.isEnderian() }
             ?: return
 
-        if (checkSword(event.itemDrop.itemStack)) {
+        if (sword.check(event.itemDrop.itemStack)) {
             event.isCancelled = true
             playSound(player, Sound.BLOCK_NOTE_BLOCK_BASS, 1, 0.1f)
         }
@@ -285,7 +246,7 @@ class Enderian(magik: Magik) : Race(magik) {
         val item = event.currentItem
             ?: return
 
-        if (checkSword(item) && (event.action == InventoryAction.MOVE_TO_OTHER_INVENTORY || event.inventory.type == InventoryType.ANVIL)) {
+        if (sword.check(item) && event.inventory.type != InventoryType.CRAFTING) {
             event.isCancelled = true
             playSound(player, Sound.BLOCK_NOTE_BLOCK_BASS, 1, 0.1f)
         }
@@ -298,7 +259,7 @@ class Enderian(magik: Magik) : Race(magik) {
         val remove = mutableListOf<ItemStack>()
         drops.forEach { item ->
             if (item == null) return@forEach
-            if (checkSword(item)) {
+            if (sword.check(item)) {
                 remove.add(item)
             }
         }

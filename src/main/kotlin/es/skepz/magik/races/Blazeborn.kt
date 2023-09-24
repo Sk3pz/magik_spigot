@@ -1,5 +1,6 @@
 package es.skepz.magik.races
 
+import es.skepz.magik.CustomItem
 import es.skepz.magik.Magik
 import es.skepz.magik.tuodlib.colorize
 import es.skepz.magik.tuodlib.displayParticles
@@ -27,24 +28,18 @@ import org.bukkit.util.Vector
 
 class Blazeborn(magik: Magik) : Race(magik) {
 
-    private val rodKey = NamespacedKey(magik, "blazeborn_rod")
     private val rodName = colorize("&6Rod of Fire")
 
-    private val cooldownMap = mutableMapOf<Player, Int>()
+    private val rod = CustomItem(magik, Material.BLAZE_ROD, 1, rodName,
+        listOf("&aA flaming rod only you can wield", "&8[&6Right Click&8] &7to fire boost while in the air."),
+        "blazeborn_rod", false,
+        mutableMapOf(Pair(Enchantment.DAMAGE_ALL, 10), Pair(Enchantment.FIRE_ASPECT, 2)))
+
     private val defaultCooldown = 5
 
-    override fun cooldownUpdate() {
-        cooldownMap.forEach { (plr, seconds) ->
-            if (seconds == 0) {
-                cooldownMap.remove(plr)
-                val rod = findRod(plr) ?: return@forEach
-                updateData(plr, rod)
-                return@forEach
-            }
-            cooldownMap[plr] = seconds - 1
-            val rod = findRod(plr) ?: return@forEach
-            updateData(plr, rod)
-        }
+    override fun cooldownUpdate(player: Player, seconds: Int) {
+        val rod = rod.find(player.inventory) ?: return
+        updateData(player, rod)
     }
 
     override fun update(player: Player) {
@@ -79,41 +74,10 @@ class Blazeborn(magik: Magik) : Race(magik) {
         return item
     }
 
-    private fun generateRod(): ItemStack {
-        val item = ItemStack(Material.BLAZE_ROD)
-        item.itemMeta = item.itemMeta.also {
-            it.displayName(Component.text(rodName))
-            it.lore(listOf(
-                Component.text(colorize("&aA flaming rod only you can wield")),
-                Component.text(colorize("&8[&6Right Click&8] &7to fire boost while in the air."))
-            ))
-            it.isUnbreakable = true
-            it.persistentDataContainer.set(rodKey, PersistentDataType.DOUBLE, Math.PI)
-            it.addEnchant(Enchantment.DAMAGE_ALL, 10, true)
-            it.addEnchant(Enchantment.FIRE_ASPECT, 2, true)
-        }
-        return item
-    }
-
-    private fun findRod(player: Player) : ItemStack? {
-        player.inventory.contents.forEach {
-            if (it == null) return@forEach
-            if (checkRod(it)) {
-                return it
-            }
-        }
-        return null
-    }
-
-    private fun checkRod(item: ItemStack): Boolean {
-        if (!item.hasItemMeta()) return false
-        return item.itemMeta.persistentDataContainer.has(rodKey, PersistentDataType.DOUBLE)
-    }
-
     private fun updateData(player: Player, sword: ItemStack) {
         sword.itemMeta = sword.itemMeta.also {
-            if (cooldownMap.containsKey(player)) {
-                it.displayName(Component.text(colorize("$rodName &8[&c${cooldownMap[player] ?: 0}&8]")))
+            if (magik.cooldowns.containsKey(player)) {
+                it.displayName(Component.text(colorize("$rodName &8[&c${magik.cooldowns[player] ?: 0}&8]")))
             } else {
                 it.displayName(Component.text(colorize(rodName)))
             }
@@ -130,7 +94,7 @@ class Blazeborn(magik: Magik) : Race(magik) {
 
     override fun set(player: Player) {
         val inv = player.inventory
-        inv.addItem(generateRod())
+        inv.addItem(rod.generate())
     }
 
     override fun remove(player: Player) {
@@ -138,7 +102,7 @@ class Blazeborn(magik: Magik) : Race(magik) {
         val inv = player.inventory
         inv.contents.forEach { item ->
             if (item == null) return@forEach
-            if (checkRod(item)) {
+            if (rod.check(item)) {
                 inv.remove(item)
             }
         }
@@ -154,8 +118,8 @@ class Blazeborn(magik: Magik) : Race(magik) {
             return
         }
 
-        if (checkRod(item) && (event.action == Action.RIGHT_CLICK_AIR || event.action == Action.RIGHT_CLICK_BLOCK)) {
-            val cooldown = cooldownMap[player]
+        if (rod.check(item) && (event.action == Action.RIGHT_CLICK_AIR || event.action == Action.RIGHT_CLICK_BLOCK)) {
+            val cooldown = magik.cooldowns[player]
             if (cooldown != null) {
                 sendMessage(player, "&cYou can't use this item for another $cooldown seconds!")
                 playSound(player, Sound.BLOCK_NOTE_BLOCK_BASS, 1, 0.1f)
@@ -171,7 +135,7 @@ class Blazeborn(magik: Magik) : Race(magik) {
             direction.z *= 0.8
 
             player.velocity = direction
-            cooldownMap[player] = defaultCooldown
+            magik.cooldowns[player] = defaultCooldown
             updateData(player, item)
         }
     }
@@ -192,7 +156,7 @@ class Blazeborn(magik: Magik) : Race(magik) {
         val player = event.player.takeIf { it.isBlazeborn() }
             ?: return
 
-        if (checkRod(event.itemDrop.itemStack)) {
+        if (rod.check(event.itemDrop.itemStack)) {
             event.isCancelled = true
             playSound(player, Sound.BLOCK_NOTE_BLOCK_BASS, 1, 0.1f)
         }
@@ -206,7 +170,7 @@ class Blazeborn(magik: Magik) : Race(magik) {
         val item = event.currentItem
             ?: return
 
-        if (checkRod(item) && (event.action == InventoryAction.MOVE_TO_OTHER_INVENTORY || event.inventory.type == InventoryType.ANVIL)) {
+        if (rod.check(item) && event.inventory.type != InventoryType.CRAFTING) {
             event.isCancelled = true
             playSound(player, Sound.BLOCK_NOTE_BLOCK_BASS, 1, 0.1f)
         }
@@ -219,7 +183,7 @@ class Blazeborn(magik: Magik) : Race(magik) {
         val remove = mutableListOf<ItemStack>()
         drops.forEach { item ->
             if (item == null) return@forEach
-            if (checkRod(item)) {
+            if (rod.check(item)) {
                 remove.add(item)
             }
         }

@@ -1,5 +1,6 @@
 package es.skepz.magik.events
 
+import es.skepz.magik.Backpack
 import es.skepz.magik.Magik
 import es.skepz.magik.races.createInventory
 import es.skepz.magik.races.getRace
@@ -7,14 +8,17 @@ import es.skepz.magik.races.raceFromName
 import es.skepz.magik.races.setRace
 import es.skepz.magik.tuodlib.playSound
 import es.skepz.magik.tuodlib.sendMessage
-import es.skepz.magik.tuodlib.serverBroadcast
 import es.skepz.magik.tuodlib.wrappers.CoreEvent
+import org.bukkit.GameMode
+import org.bukkit.Material
 import org.bukkit.Sound
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
+import org.bukkit.event.inventory.ClickType
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.inventory.InventoryCloseEvent
 import org.bukkit.inventory.Inventory
+import org.bukkit.inventory.ItemStack
 import org.bukkit.persistence.PersistentDataType
 
 class EventInventory(val magik: Magik) : CoreEvent(magik) {
@@ -25,8 +29,17 @@ class EventInventory(val magik: Magik) : CoreEvent(magik) {
 
     @EventHandler
     fun onClick(event: InventoryClickEvent) {
-
         val p = event.whoClicked as Player
+
+        if (Backpack.isBackpackInv(magik, event.inventory)) {
+            val clicked = event.currentItem ?: return
+            if (Backpack.isBackpack(magik, clicked)) {
+                event.isCancelled = true
+                playSound(p, Sound.BLOCK_NOTE_BLOCK_BASS, 1, 0.1f)
+                return
+            }
+        }
+
         val inv = event.clickedInventory?.takeIf { checkInventory(it) } ?: return
         val clicked = event.currentItem ?: return
 
@@ -61,7 +74,20 @@ class EventInventory(val magik: Magik) : CoreEvent(magik) {
                 sendMessage(player, "&cPlease pick a race. Pick human for no race!")
                 playSound(player, Sound.BLOCK_NOTE_BLOCK_BASS, 1, 0.1f)
             }
+            return
         }
+
+        if (Backpack.isBackpackInv(magik, inv)) {
+            val id = magik.backpacks[inv] ?: return
+            magik.backpacks.remove(inv)
+            val backpack = Backpack.find(magik, event.player.inventory, id) ?: return
+            val items = mutableMapOf<Int, ItemStack>()
+            inv.contents.forEachIndexed { slot, item ->
+                items[slot] = item ?: ItemStack(Material.AIR)
+            }
+            backpack.saveData(items)
+        }
+
     }
 
 }

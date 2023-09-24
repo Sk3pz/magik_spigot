@@ -1,5 +1,6 @@
 package es.skepz.magik.races
 
+import es.skepz.magik.CustomItem
 import es.skepz.magik.Magik
 import es.skepz.magik.tuodlib.colorize
 import es.skepz.magik.tuodlib.playSound
@@ -23,20 +24,25 @@ import org.bukkit.potion.PotionEffectType
 
 class Elf(magik: Magik) : Race(magik) {
 
-    private val bowKey = NamespacedKey(magik, "elven_bow")
+    private val bow = CustomItem(magik, Material.BOW, 1, "&2Longbow",
+        listOf("&aBuilt with precision to do maximum damage"),
+        "elven_bow", true,
+        mutableMapOf(Pair(Enchantment.ARROW_DAMAGE, 5),
+            Pair(Enchantment.ARROW_INFINITE, 1),
+            Pair(Enchantment.ARROW_KNOCKBACK, 4)))
 
     override fun update(player: Player) {
-        player.addPotionEffect(PotionEffect(PotionEffectType.SPEED, 2, 0, false, false))
-        player.addPotionEffect(PotionEffect(PotionEffectType.JUMP, 2, 0, false, false))
-        player.addPotionEffect(PotionEffect(PotionEffectType.WEAKNESS, 2, 0, false, false))
+        if (player.isSneaking && player.isOnGround) {
+            player.addPotionEffect(PotionEffect(PotionEffectType.INVISIBILITY, 2, 0, false, false))
+            player.addPotionEffect(PotionEffect(PotionEffectType.WEAKNESS, 2, 2, false, false))
+        }
 
-//        if (player.location.block.lightFromSky < 10 && player.location.block.lightFromBlocks < 7) {
-//            player.addPotionEffect(PotionEffect(PotionEffectType.DARKNESS, 40, 1, false, false))
-//        }
-    }
-
-    override fun comingSoon(): Boolean {
-        return true
+        if (player.location.block.lightLevel <= 10) {
+            player.addPotionEffect(PotionEffect(PotionEffectType.WEAKNESS, 2, 1, false, false))
+        } else {
+            player.addPotionEffect(PotionEffect(PotionEffectType.SPEED, 2, 0, false, false))
+            player.addPotionEffect(PotionEffect(PotionEffectType.JUMP, 2, 0, false, false))
+        }
     }
 
     override fun guiDisplayItem(): ItemStack {
@@ -49,34 +55,13 @@ class Elf(magik: Magik) : Race(magik) {
                 Component.text(colorize("&7Great for players who prefer ranged PVP")),
                 Component.text(colorize("&7- &aLongbow: Shoots more powerful arrows")),
                 Component.text(colorize("&7- &aFaster than most")),
-                Component.text(colorize("&7- &a&k??????????")),
+                Component.text(colorize("&7- &aInvisible when sneaking on the ground")),
                 Component.text(colorize("&7- &aJumps higher")),
-                Component.text(colorize("&7- &cWeaker")),
-                Component.text(colorize("&7- &c&k??????????")),
-                //Component.text(colorize("&7- &cTrouble seeing in the dark"))
+                Component.text(colorize("&7- &cScared of the dark (weaker and no boosts)")),
             ))
         }
 
         return item
-    }
-
-    private fun generateBow(): ItemStack {
-        val item = ItemStack(Material.BOW)
-        item.itemMeta = item.itemMeta.also {
-            it.displayName(Component.text(colorize("&2Longbow")))
-            it.lore(listOf(Component.text(colorize("&aBuilt with precision to do maximum damage"))))
-            it.isUnbreakable = true
-            it.persistentDataContainer.set(bowKey, PersistentDataType.DOUBLE, Math.PI)
-            it.addEnchant(Enchantment.ARROW_DAMAGE, 5, true)
-            it.addEnchant(Enchantment.ARROW_INFINITE, 1, true)
-            it.addEnchant(Enchantment.ARROW_KNOCKBACK, 4, true)
-        }
-        return item
-    }
-
-    private fun checkBow(item: ItemStack): Boolean {
-        if (!item.hasItemMeta()) return false
-        return item.itemMeta.persistentDataContainer.has(bowKey, PersistentDataType.DOUBLE)
     }
 
     private fun Player.isElf(): Boolean {
@@ -89,7 +74,7 @@ class Elf(magik: Magik) : Race(magik) {
 
     override fun set(player: Player) {
         val inv = player.inventory
-        inv.addItem(generateBow())
+        inv.addItem(bow.generate())
         if (!inv.contains(Material.ARROW)) {
             inv.addItem(ItemStack(Material.ARROW, 1))
         }
@@ -99,7 +84,7 @@ class Elf(magik: Magik) : Race(magik) {
         val inv = player.inventory
         inv.contents.forEach { item ->
             if (item == null) return@forEach
-            if (checkBow(item)) {
+            if (bow.check(item)) {
                 inv.remove(item)
             }
         }
@@ -110,7 +95,7 @@ class Elf(magik: Magik) : Race(magik) {
         val player = event.player.takeIf { it.isElf() }
             ?: return
 
-        if (checkBow(event.itemDrop.itemStack)) {
+        if (bow.check(event.itemDrop.itemStack)) {
             event.isCancelled = true
             playSound(player, Sound.BLOCK_NOTE_BLOCK_BASS, 1, 0.1f)
         }
@@ -124,7 +109,7 @@ class Elf(magik: Magik) : Race(magik) {
         val item = event.currentItem
             ?: return
 
-        if (checkBow(item) && (event.action == InventoryAction.MOVE_TO_OTHER_INVENTORY || event.inventory.type == InventoryType.ANVIL)) {
+        if (bow.check(item) && event.inventory.type != InventoryType.CRAFTING) {
             event.isCancelled = true
             playSound(player, Sound.BLOCK_NOTE_BLOCK_BASS, 1, 0.1f)
         }
@@ -137,7 +122,7 @@ class Elf(magik: Magik) : Race(magik) {
         val remove = mutableListOf<ItemStack>()
         drops.forEach { item ->
             if (item == null) return@forEach
-            if (checkBow(item)) {
+            if (bow.check(item)) {
                 remove.add(item)
             }
         }

@@ -18,6 +18,12 @@ class EventPlayerJoin(val magik: Magik) : CoreEvent(magik) {
 
         magik.userFiles[player.uniqueId] = file
 
+        val specialItems = magik.specialItems
+
+        player.discoverRecipes(listOf(specialItems.changeRecipeKey,
+            specialItems.chainhelmKey, specialItems.chainchesKey,
+            specialItems.chainlegKey, specialItems.chainbootKey))
+
         val race = file.getRace()
         if (race == null) {
             createInventory(magik, player)

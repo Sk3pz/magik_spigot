@@ -1,5 +1,6 @@
 package es.skepz.magik.races
 
+import es.skepz.magik.CustomItem
 import es.skepz.magik.Magik
 import es.skepz.magik.tuodlib.colorize
 import es.skepz.magik.tuodlib.playSound
@@ -23,7 +24,10 @@ import org.bukkit.potion.PotionEffectType
 
 class Aquarian(magik: Magik) : Race(magik) {
 
-    private val tridentKey = NamespacedKey(magik, "aquarian_trident")
+    private val trident = CustomItem(magik, Material.TRIDENT, 1, "&3Posideon's Trident",
+        listOf("&6The power of the sea in your fingertips"),
+        "aquarian_trident", true,
+        mutableMapOf(Pair(Enchantment.RIPTIDE, 3)))
 
     override fun update(player: Player) {
         player.addPotionEffect(PotionEffect(PotionEffectType.DOLPHINS_GRACE, 2, 0, false, false))
@@ -50,7 +54,6 @@ class Aquarian(magik: Magik) : Race(magik) {
             it.displayName(Component.text(colorize("&3&lAquarian")))
             it.lore(listOf(
                 Component.text(colorize("&7Great for Dihydrogen Monoxide enjoyers")),
-                Component.text(colorize("&7(&cWIP, SUBJECT TO CHANGE&7)")),
                 Component.text(colorize("&7- &aTrident: The power of the seas at your fingertips")),
                 Component.text(colorize("  &7- Please note the trident may change in the next update")),
                 Component.text(colorize("&7- &aSee better underwater")),
@@ -65,26 +68,6 @@ class Aquarian(magik: Magik) : Race(magik) {
         return item
     }
 
-    // consider: modes to switch between loyalty and riptide?
-
-    private fun generateTrident(): ItemStack {
-        val item = ItemStack(Material.TRIDENT)
-        item.itemMeta = item.itemMeta.also {
-            it.displayName(Component.text(colorize("&3Posideon's Trident")))
-            it.lore(listOf(Component.text(colorize("&6The power of the sea in your fingertips"))))
-            it.isUnbreakable = true
-            it.persistentDataContainer.set(tridentKey, PersistentDataType.DOUBLE, Math.PI)
-            it.addEnchant(Enchantment.LOYALTY, 3, true)
-            it.addEnchant(Enchantment.IMPALING, 7, true)
-        }
-        return item
-    }
-
-    private fun checkTrident(item: ItemStack): Boolean {
-        if (!item.hasItemMeta()) return false
-        return item.itemMeta.persistentDataContainer.has(tridentKey, PersistentDataType.DOUBLE)
-    }
-
     private fun Player.isAquarian(): Boolean {
         return getRace(magik, this) is Aquarian
     }
@@ -95,10 +78,8 @@ class Aquarian(magik: Magik) : Race(magik) {
 
     override fun set(player: Player) {
         val inv = player.inventory
-        inv.addItem(generateTrident())
-        if (!inv.contains(Material.ARROW)) {
-            inv.addItem(ItemStack(Material.ARROW, 1))
-        }
+        inv.addItem(trident.generate())
+        
     }
 
     override fun remove(player: Player) {
@@ -106,7 +87,7 @@ class Aquarian(magik: Magik) : Race(magik) {
         val inv = player.inventory
         inv.contents.forEach { item ->
             if (item == null) return@forEach
-            if (checkTrident(item)) {
+            if (trident.check(item)) {
                 inv.remove(item)
             }
         }
@@ -117,7 +98,7 @@ class Aquarian(magik: Magik) : Race(magik) {
         val player = event.player.takeIf { it.isAquarian() }
             ?: return
 
-        if (checkTrident(event.itemDrop.itemStack)) {
+        if (trident.check(event.itemDrop.itemStack)) {
             event.isCancelled = true
             playSound(player, Sound.BLOCK_NOTE_BLOCK_BASS, 1, 0.1f)
         }
@@ -131,7 +112,7 @@ class Aquarian(magik: Magik) : Race(magik) {
         val item = event.currentItem
             ?: return
 
-        if (checkTrident(item) && (event.action == InventoryAction.MOVE_TO_OTHER_INVENTORY || event.inventory.type == InventoryType.ANVIL)) {
+        if (trident.check(item) && event.inventory.type != InventoryType.CRAFTING) {
             event.isCancelled = true
             playSound(player, Sound.BLOCK_NOTE_BLOCK_BASS, 1, 0.1f)
         }
@@ -144,7 +125,7 @@ class Aquarian(magik: Magik) : Race(magik) {
         val remove = mutableListOf<ItemStack>()
         drops.forEach { item ->
             if (item == null) return@forEach
-            if (checkTrident(item)) {
+            if (trident.check(item)) {
                 remove.add(item)
             }
         }

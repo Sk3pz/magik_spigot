@@ -1,5 +1,6 @@
 package es.skepz.magik.races
 
+import es.skepz.magik.CustomItem
 import es.skepz.magik.Magik
 import es.skepz.magik.tuodlib.*
 import net.kyori.adventure.text.Component
@@ -31,28 +32,23 @@ import kotlin.math.min
 class Druid(magik: Magik) : Race(magik) {
 
     private val maxHealth = 16.0
-    private val stickKey = NamespacedKey(magik, "druid_stick")
-    private val stickName = "&aStick of Life"
 
-    private val cooldownMap = mutableMapOf<Player, Int>()
+    private val stickName = "&aStick of Life"
+    private val stick = CustomItem(magik, Material.STICK, 1, stickName,
+        listOf("&6Right click on crops to grow and harvest them", "&7Has a 10 second cooldown every 5 uses."),
+        "druid_stick", false)
+
     private val usageMap = mutableMapOf<Player, Int>()
 
     private val defaultUses = 5
     private val defaultCooldown = 10
 
-    override fun cooldownUpdate() {
-        cooldownMap.forEach { (plr, seconds) ->
-            if (seconds == 0) {
-                cooldownMap.remove(plr)
-                usageMap[plr] = defaultUses
-                val stick = findStick(plr) ?: return@forEach
-                updateData(plr, stick)
-                return@forEach
-            }
-            cooldownMap[plr] = seconds - 1
-            val stick = findStick(plr) ?: return@forEach
-            updateData(plr, stick)
+    override fun cooldownUpdate(player: Player, seconds: Int) {
+        val itm = stick.find(player.inventory) ?: return
+        if (!magik.cooldowns.containsKey(player)) {
+            usageMap[player] = defaultUses
         }
+        updateData(player, itm)
     }
 
     override fun update(player: Player) {
@@ -96,36 +92,8 @@ class Druid(magik: Magik) : Race(magik) {
         return item
     }
 
-    private fun generateStick(): ItemStack {
-        val stick = ItemStack(Material.STICK, 1)
-        stick.itemMeta = stick.itemMeta.also {
-            it.displayName(Component.text(colorize(stickName)))
-            it.lore(listOf(
-                Component.text(colorize("&6Right click on crops to grow and harvest them")),
-                Component.text(colorize("&7Has a 10 second cooldown every 5 uses.")),
-            ))
-            it.persistentDataContainer.set(stickKey, PersistentDataType.DOUBLE, 1.0)
-        }
-        return stick
-    }
-
     private fun Player.isDruid(): Boolean {
         return getRace(magik, this) is Druid
-    }
-
-    private fun findStick(player: Player) : ItemStack? {
-        player.inventory.contents.forEach {
-            if (it == null) return@forEach
-            if (checkStick(it)) {
-                return it
-            }
-        }
-        return null
-    }
-
-    private fun checkStick(item: ItemStack): Boolean {
-        if (!item.hasItemMeta()) return false
-        return item.itemMeta.persistentDataContainer.has(stickKey, PersistentDataType.DOUBLE)
     }
 
     override fun name(): String {
@@ -133,7 +101,7 @@ class Druid(magik: Magik) : Race(magik) {
     }
 
     override fun set(player: Player) {
-        player.inventory.addItem(generateStick())
+        player.inventory.addItem(stick.generate())
         usageMap[player] = defaultUses
     }
 
@@ -142,21 +110,21 @@ class Druid(magik: Magik) : Race(magik) {
         val inv = player.inventory
         inv.contents.forEach { item ->
             if (item == null) return@forEach
-            if (checkStick(item)) {
+            if (stick.check(item)) {
                 inv.remove(item)
             }
         }
 
         usageMap.remove(player)
-        cooldownMap.remove(player)
+        magik.cooldowns.remove(player)
     }
 
     private fun updateData(player: Player, stick: ItemStack) {
         stick.itemMeta = stick.itemMeta.also {
-            if (cooldownMap.containsKey(player)) {
-                it.displayName(Component.text(colorize("$stickName &8[&c${cooldownMap[player] ?: 0}&8]")))
+            if (magik.cooldowns.containsKey(player)) {
+                it.displayName(Component.text(colorize("$stickName &8[&c${(magik.cooldowns[player] ?: 1)}&8]")))
             } else if (usageMap.containsKey(player)) {
-                it.displayName(Component.text(colorize("$stickName &8[&f${usageMap[player] ?: 0}&8]")))
+                it.displayName(Component.text(colorize("$stickName &8[&f${(usageMap[player] ?: 1)}&8]")))
             }
         }
     }
@@ -226,11 +194,11 @@ class Druid(magik: Magik) : Race(magik) {
     private fun useStick(player: Player) {
         val uses = usageMap[player] ?: 1
         usageMap[player] = uses - 1
-        if (uses <= 0) {
-            cooldownMap[player] = defaultCooldown
+        if (uses <= 1) {
+            magik.cooldowns[player] = defaultCooldown
             usageMap.remove(player)
         }
-        val stick = findStick(player) ?: return
+        val stick = stick.find(player.inventory) ?: return
         updateData(player, stick)
     }
 
@@ -239,7 +207,7 @@ class Druid(magik: Magik) : Race(magik) {
         val player = event.player.takeIf { it.isDruid() }
             ?: return
 
-        if (!checkStick(event.item ?: return)) {
+        if (!stick.check(event.item ?: return)) {
             return
         }
 
@@ -253,7 +221,7 @@ class Druid(magik: Magik) : Race(magik) {
         val ageable = block.blockData as? Ageable
             ?: return
 
-        val cooldown = cooldownMap[player]
+        val cooldown = magik.cooldowns[player]
 
         if (cooldown != null) {
             sendMessage(player, "&cYou can't use this item for another $cooldown seconds!")
@@ -313,7 +281,7 @@ class Druid(magik: Magik) : Race(magik) {
         val player = event.player.takeIf { it.isDruid() }
             ?: return
 
-        if (checkStick(event.itemDrop.itemStack)) {
+        if (stick.check(event.itemDrop.itemStack)) {
             event.isCancelled = true
             playSound(player, Sound.BLOCK_NOTE_BLOCK_BASS, 1, 0.1f)
         }
@@ -327,7 +295,7 @@ class Druid(magik: Magik) : Race(magik) {
         val item = event.currentItem 
 	        ?: return
 	    
-        if (checkStick(item) && (event.action == InventoryAction.MOVE_TO_OTHER_INVENTORY || event.inventory.type == InventoryType.ANVIL)) {
+        if (stick.check(item) && event.inventory.type != InventoryType.CRAFTING) {
             event.isCancelled = true
             playSound(player, Sound.BLOCK_NOTE_BLOCK_BASS, 1, 0.1f)
         }
@@ -340,7 +308,7 @@ class Druid(magik: Magik) : Race(magik) {
         val remove = mutableListOf<ItemStack>()
         drops.forEach { item ->
             if (item == null) return@forEach
-            if (checkStick(item)) {
+            if (stick.check(item)) {
                 remove.add(item)
             }
         }
