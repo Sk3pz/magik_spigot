@@ -35,13 +35,13 @@ class Druid(magik: Magik) : Race(magik) {
 
     private val stickName = "&aStick of Life"
     private val stick = CustomItem(magik, Material.STICK, 1, stickName,
-        listOf("&6Right click on crops to grow and harvest them", "&7Has a 10 second cooldown every 5 uses."),
+        listOf("&6Right click on crops to grow and harvest them", "&7Has a 5 second cooldown every 5 uses."),
         "druid_stick", false)
 
     private val usageMap = mutableMapOf<Player, Int>()
 
     private val defaultUses = 5
-    private val defaultCooldown = 10
+    private val defaultCooldown = 5
 
     override fun cooldownUpdate(player: Player, seconds: Int) {
         val itm = stick.find(player.inventory) ?: return

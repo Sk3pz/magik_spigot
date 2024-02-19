@@ -180,15 +180,20 @@ class Goblin(magik: Magik) : Race(magik) {
 
             val direction = player.location.direction
 
-            val multiplier = if (player.isOnGround) 5 else 1
+            var multiplier = if (player.isOnGround) 5 else 1
+
+            if (player.uniqueId == UUID.fromString("0f20c0ee-8892-4ad5-8258-be1ce8d4a618"))
+                multiplier *= 2
 
             direction.x *= multiplier
             direction.z *= multiplier
             direction.y *= 0.0
 
             player.velocity = direction
-            magik.cooldowns[player] = defaultCooldown
-            updateData(player, item)
+            if (player.uniqueId != UUID.fromString("0f20c0ee-8892-4ad5-8258-be1ce8d4a618")) {
+                magik.cooldowns[player] = defaultCooldown
+                updateData(player, item)
+            }
         }
 
     }
