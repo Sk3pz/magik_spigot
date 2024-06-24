@@ -52,6 +52,7 @@ class Magik : JavaPlugin() {
         Goblin(this).register()
         Enderian(this).register()
         Blazeborn(this).register()
+        Giant(this).register()
         Lycan(this).register()
 
         Human(this).register()
