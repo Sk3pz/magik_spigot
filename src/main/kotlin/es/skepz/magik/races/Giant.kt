@@ -68,6 +68,7 @@ class Giant(magik: Magik) : Race(magik) {
         player.getAttribute(Attribute.PLAYER_ENTITY_INTERACTION_RANGE)?.baseValue = 14.0
         player.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED)?.baseValue = 0.08
         player.getAttribute(Attribute.GENERIC_JUMP_STRENGTH)?.baseValue = 0.8
+        player.getAttribute(Attribute.GENERIC_SAFE_FALL_DISTANCE)?.baseValue = 12.0
 
         val inv = player.inventory
         inv.addItem(mace.generate())
@@ -81,6 +82,7 @@ class Giant(magik: Magik) : Race(magik) {
         player.getAttribute(Attribute.PLAYER_ENTITY_INTERACTION_RANGE)?.baseValue = 3.0
         player.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED)?.baseValue = 0.1
         player.getAttribute(Attribute.GENERIC_JUMP_STRENGTH)?.baseValue = 0.42
+        player.getAttribute(Attribute.GENERIC_SAFE_FALL_DISTANCE)?.baseValue = 3.0
 
         val inv = player.inventory
         inv.contents.forEach { item ->
