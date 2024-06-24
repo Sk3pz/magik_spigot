@@ -61,7 +61,7 @@ class Giant(magik: Magik) : Race(magik) {
     }
 
     override fun set(player: Player) {
-        player.getAttribute(Attribute.GENERIC_SCALE)?.baseValue = 10.0
+        player.getAttribute(Attribute.GENERIC_SCALE)?.baseValue = 8.0
         player.getAttribute(Attribute.GENERIC_MAX_HEALTH)?.baseValue = 60.0
         player.getAttribute(Attribute.GENERIC_STEP_HEIGHT)?.baseValue = 2.5
         player.getAttribute(Attribute.PLAYER_BLOCK_INTERACTION_RANGE)?.baseValue = 14.0
