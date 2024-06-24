@@ -80,7 +80,7 @@ class Giant(magik: Magik) : Race(magik) {
         player.getAttribute(Attribute.PLAYER_BLOCK_INTERACTION_RANGE)?.baseValue = 4.5
         player.getAttribute(Attribute.PLAYER_ENTITY_INTERACTION_RANGE)?.baseValue = 3.0
         player.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED)?.baseValue = 0.1
-        player.getAttribute(Attribute.GENERIC_JUMP_STRENGTH)?.baseValue = 0.8
+        player.getAttribute(Attribute.GENERIC_JUMP_STRENGTH)?.baseValue = 0.42
 
         val inv = player.inventory
         inv.contents.forEach { item ->
