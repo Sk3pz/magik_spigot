@@ -19,7 +19,7 @@ import org.bukkit.inventory.ItemStack
 
 class Giant(magik: Magik) : Race(magik) {
 
-    private val mace = CustomItem(magik, Material.BOW, 1, "&cSledge Hammer",
+    private val mace = CustomItem(magik, Material.MACE, 1, "&cSledge Hammer",
         listOf("&aBuilt to deal damage"),
         "giant_mace", true,
         mutableMapOf(Pair(Enchantment.SHARPNESS, 5),
