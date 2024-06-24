@@ -46,7 +46,6 @@ class Giant(magik: Magik) : Race(magik) {
                 colorize("&7- &cCan't fit in small spaces"),
                 colorize("&7- &cVery large target"),
                 colorize("&7- &cSlightly slower"),
-                colorize("&7- &cPoor reach"),
             ))
         }
 
@@ -65,8 +64,8 @@ class Giant(magik: Magik) : Race(magik) {
         player.getAttribute(Attribute.GENERIC_SCALE)?.baseValue = 8.0
         player.getAttribute(Attribute.GENERIC_MAX_HEALTH)?.baseValue = 60.0
         player.getAttribute(Attribute.GENERIC_STEP_HEIGHT)?.baseValue = 2.5
-        player.getAttribute(Attribute.PLAYER_BLOCK_INTERACTION_RANGE)?.baseValue = 14.0
-        player.getAttribute(Attribute.PLAYER_ENTITY_INTERACTION_RANGE)?.baseValue = 12.0
+        player.getAttribute(Attribute.PLAYER_BLOCK_INTERACTION_RANGE)?.baseValue = 18.0
+        player.getAttribute(Attribute.PLAYER_ENTITY_INTERACTION_RANGE)?.baseValue = 14.0
         player.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED)?.baseValue = 0.08
         player.getAttribute(Attribute.GENERIC_JUMP_STRENGTH)?.baseValue = 0.8
 
