@@ -63,7 +63,7 @@ class Goblin(magik: Magik) : Race(magik) {
                     colorize("&7- &aImmune to poison"),
                     colorize("&7- &cCan only wear leather armor"),
                     colorize("&7- &c6 max hearts"),
-                    colorize("&7- &c1.5 blocks tall")
+                    colorize("&7- &71.5 blocks tall")
                 )
             )
         }
