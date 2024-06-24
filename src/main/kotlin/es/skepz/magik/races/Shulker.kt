@@ -2,9 +2,8 @@ package es.skepz.magik.races
 
 import es.skepz.magik.CustomItem
 import es.skepz.magik.Magik
-import es.skepz.magik.tuodlib.colorize
-import es.skepz.magik.tuodlib.playSound
-import net.kyori.adventure.text.Component
+import es.skepz.magik.skepzlib.colorize
+import es.skepz.magik.skepzlib.playSound
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
 import org.bukkit.Sound
@@ -12,27 +11,24 @@ import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.entity.PlayerDeathEvent
-import org.bukkit.event.inventory.InventoryAction
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.inventory.InventoryType
 import org.bukkit.event.player.PlayerDropItemEvent
 import org.bukkit.event.player.PlayerRespawnEvent
 import org.bukkit.inventory.ItemStack
-import org.bukkit.persistence.PersistentDataType
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 
 class Shulker(magik: Magik) : Race(magik) {
 
-    private val bowKey = NamespacedKey(magik, "elven_bow")
     private val shulkItem = CustomItem(magik, Material.STICK, 1, "???",
         listOf(""),
         "shulker_todo", true,
-        mapOf(Pair(Enchantment.DAMAGE_ALL, 5), Pair(Enchantment.KNOCKBACK, 2)))
+        mapOf(Pair(Enchantment.SHARPNESS, 5), Pair(Enchantment.KNOCKBACK, 2)))
 
     override fun update(player: Player) {
         player.addPotionEffect(PotionEffect(PotionEffectType.SPEED, 2, 0, false, false))
-        player.addPotionEffect(PotionEffect(PotionEffectType.JUMP, 2, 0, false, false))
+        player.addPotionEffect(PotionEffect(PotionEffectType.JUMP_BOOST, 2, 0, false, false))
         player.addPotionEffect(PotionEffect(PotionEffectType.WEAKNESS, 2, 0, false, false))
 
 //        if (player.location.block.lightFromSky < 10 && player.location.block.lightFromBlocks < 7) {
@@ -49,14 +45,14 @@ class Shulker(magik: Magik) : Race(magik) {
 
         item.itemMeta = item.itemMeta.also {
             it.isUnbreakable = true
-            it.displayName(Component.text(colorize("&d&l&kShulker")))
+            it.displayName(colorize("&d&l&kShulker"))
             it.lore(listOf(
-                Component.text(colorize("&7&k??????????????")),
-                Component.text(colorize("&7- &a&kinsert item here")),
-                Component.text(colorize("&7- &a&kExtremely strong at night")),
-                Component.text(colorize("&7- &a&kTame wolves with no bones")),
-                Component.text(colorize("&7- &c&kWeak during the day")),
-                Component.text(colorize("&7- &c&kEven weaker in other dimensions")),
+                colorize("&7&k??????????????"),
+                colorize("&7- &a&kinsert item here"),
+                colorize("&7- &a&kExtremely strong at night"),
+                colorize("&7- &a&kTame wolves with no bones"),
+                colorize("&7- &c&kWeak during the day"),
+                colorize("&7- &c&kEven weaker in other dimensions"),
                 //Component.text(colorize("&7- &cTrouble seeing in the dark"))
             ))
         }

@@ -2,15 +2,14 @@ package es.skepz.magik.races
 
 import es.skepz.magik.CustomItem
 import es.skepz.magik.Magik
-import es.skepz.magik.tuodlib.colorize
-import es.skepz.magik.tuodlib.playSound
-import net.kyori.adventure.text.Component
+import es.skepz.magik.skepzlib.colorize
+import es.skepz.magik.skepzlib.playSound
 import org.bukkit.Material
 import org.bukkit.Sound
+import org.bukkit.attribute.Attribute
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.entity.PlayerDeathEvent
-import org.bukkit.event.inventory.InventoryAction
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.inventory.InventoryType
 import org.bukkit.event.player.PlayerDropItemEvent
@@ -39,14 +38,14 @@ class Leprechaun(magik: Magik) : Race(magik) {
 
         item.itemMeta = item.itemMeta.also {
             it.isUnbreakable = true
-            it.displayName(Component.text(colorize("&a&l&kLeprechaun")))
+            it.displayName(colorize("&a&l&kLeprechaun"))
             it.lore(listOf(
-                Component.text(colorize("&7&kThe lucky leather worker")),
-                Component.text(colorize("&7- &a&kLeather working stick: Craft unique items like backpacks")),
-                Component.text(colorize("&7- &a&kVery lucky")),
-                Component.text(colorize("&7- &c&kNot good at combat")),
-                Component.text(colorize("&7- &c&kFast fucker")),
-                //Component.text(colorize("&7- &cTrouble seeing in the dark"))
+                colorize("&7&kThe lucky leather worker"),
+                colorize("&7- &a&kLeather working stick: Craft unique items like backpacks"),
+                colorize("&7- &a&kVery lucky"),
+                colorize("&7- &c&kNot good at combat"),
+                colorize("&7- &c&kFaster movement speed"),
+                colorize("&7- &c&k1 block tall"),
             ))
         }
 
@@ -62,6 +61,7 @@ class Leprechaun(magik: Magik) : Race(magik) {
     }
 
     override fun set(player: Player) {
+        player.getAttribute(Attribute.GENERIC_SCALE)?.baseValue = 0.5
         val inv = player.inventory
         inv.addItem(brush.generate())
         if (!inv.contains(Material.ARROW)) {
@@ -70,6 +70,7 @@ class Leprechaun(magik: Magik) : Race(magik) {
     }
 
     override fun remove(player: Player) {
+        player.getAttribute(Attribute.GENERIC_SCALE)?.baseValue = 1.0
         val inv = player.inventory
         inv.contents.forEach { item ->
             if (item == null) return@forEach

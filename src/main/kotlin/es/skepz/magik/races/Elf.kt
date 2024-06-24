@@ -2,23 +2,20 @@ package es.skepz.magik.races
 
 import es.skepz.magik.CustomItem
 import es.skepz.magik.Magik
-import es.skepz.magik.tuodlib.colorize
-import es.skepz.magik.tuodlib.playSound
-import net.kyori.adventure.text.Component
+import es.skepz.magik.skepzlib.colorize
+import es.skepz.magik.skepzlib.playSound
 import org.bukkit.Material
-import org.bukkit.NamespacedKey
 import org.bukkit.Sound
 import org.bukkit.enchantments.Enchantment
+import org.bukkit.entity.LivingEntity
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.entity.PlayerDeathEvent
-import org.bukkit.event.inventory.InventoryAction
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.inventory.InventoryType
 import org.bukkit.event.player.PlayerDropItemEvent
 import org.bukkit.event.player.PlayerRespawnEvent
 import org.bukkit.inventory.ItemStack
-import org.bukkit.persistence.PersistentDataType
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 
@@ -27,12 +24,12 @@ class Elf(magik: Magik) : Race(magik) {
     private val bow = CustomItem(magik, Material.BOW, 1, "&2Longbow",
         listOf("&aBuilt with precision to do maximum damage"),
         "elven_bow", true,
-        mutableMapOf(Pair(Enchantment.ARROW_DAMAGE, 5),
-            Pair(Enchantment.ARROW_INFINITE, 1),
-            Pair(Enchantment.ARROW_KNOCKBACK, 4)))
+        mutableMapOf(Pair(Enchantment.POWER, 5),
+            Pair(Enchantment.INFINITY, 1),
+            Pair(Enchantment.PUNCH, 4)))
 
     override fun update(player: Player) {
-        if (player.isSneaking && player.isOnGround) {
+        if (player.isSneaking && (player as LivingEntity).isOnGround) {
             player.addPotionEffect(PotionEffect(PotionEffectType.INVISIBILITY, 2, 0, false, false))
             player.addPotionEffect(PotionEffect(PotionEffectType.WEAKNESS, 2, 2, false, false))
         }
@@ -41,7 +38,7 @@ class Elf(magik: Magik) : Race(magik) {
             player.addPotionEffect(PotionEffect(PotionEffectType.WEAKNESS, 2, 1, false, false))
         } else {
             player.addPotionEffect(PotionEffect(PotionEffectType.SPEED, 2, 0, false, false))
-            player.addPotionEffect(PotionEffect(PotionEffectType.JUMP, 2, 0, false, false))
+            player.addPotionEffect(PotionEffect(PotionEffectType.JUMP_BOOST, 2, 0, false, false))
         }
     }
 
@@ -50,14 +47,14 @@ class Elf(magik: Magik) : Race(magik) {
 
         item.itemMeta = item.itemMeta.also {
             it.isUnbreakable = true
-            it.displayName(Component.text(colorize("&2&lElf")))
+            it.displayName(colorize("&2&lElf"))
             it.lore(listOf(
-                Component.text(colorize("&7Great for players who prefer ranged PVP")),
-                Component.text(colorize("&7- &aLongbow: Shoots more powerful arrows")),
-                Component.text(colorize("&7- &aFaster than most")),
-                Component.text(colorize("&7- &aInvisible when sneaking on the ground")),
-                Component.text(colorize("&7- &aJumps higher")),
-                Component.text(colorize("&7- &cScared of the dark (weaker and no boosts)")),
+                colorize("&7Great for players who prefer ranged PVP"),
+                colorize("&7- &aLongbow: Shoots more powerful arrows"),
+                colorize("&7- &aFaster than most"),
+                colorize("&7- &aInvisible when sneaking on the ground"),
+                colorize("&7- &aJumps higher"),
+                colorize("&7- &cScared of the dark (weaker and no boosts)"),
             ))
         }
 

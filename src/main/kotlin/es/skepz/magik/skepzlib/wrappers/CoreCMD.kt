@@ -1,12 +1,13 @@
-package es.skepz.magik.tuodlib.wrappers
+package es.skepz.magik.skepzlib.wrappers
 
-import es.skepz.magik.tuodlib.*
+import es.skepz.magik.skepzlib.*
 import org.bukkit.command.Command
 import org.bukkit.command.CommandExecutor
 import org.bukkit.command.CommandSender
 import org.bukkit.command.TabCompleter
 import org.bukkit.entity.Player
 import org.bukkit.plugin.java.JavaPlugin
+import java.util.ArrayList
 
 abstract class CoreCMD protected constructor(
     private val plugin: JavaPlugin,
@@ -14,19 +15,27 @@ abstract class CoreCMD protected constructor(
     private val usage: String,
     private val argc: Int,
     var permission: String,
-    var onlyPlayer: Boolean,
-    var tabCom: Boolean
+    private var onlyPlayer: Boolean,
+    private var tabCom: Boolean
 ) : CommandExecutor, TabCompleter {
 
-    class Context(val sender: CommandSender, val args: Array<String>)
+    lateinit var sender: CommandSender
+    lateinit var args: ArrayList<String>
+    private var helpMessage: String = "<gray>Usage: <red>$usage"
 
-    var helpMessage: String = "&7Usage: &c$usage"
-
-    abstract fun Context.run()
-    abstract fun registerTabComplete(sender: CommandSender, args: Array<String>): List<String>
+    open fun init() {}
+    abstract fun run()
+    open fun registerTabComplete(sender: CommandSender, args: Array<String>): List<String> { return listOf() }
 
     override fun onTabComplete(sender: CommandSender, cmd: Command, alias: String, args: Array<String>): List<String> {
         return registerTabComplete(sender, args)
+    }
+
+    private val isPlayer: Boolean
+        get() = sender is Player
+
+    fun getPlayer(): Player? {
+        return if (isPlayer) sender as Player else null
     }
 
     fun register() {
@@ -41,21 +50,16 @@ abstract class CoreCMD protected constructor(
         }
     }
 
-    fun Context.invalidUse() {
+    fun invalidUse() {
         invalidCmdUsage(sender, usage)
-    }
-
-    fun Context.requirePlayer(): Boolean {
-        if (sender !is Player) {
-            notPlayer(sender)
-        }
-
-        return true
     }
 
     // Will check permissions and for player
     // then execute run()
-    override fun onCommand(sender: CommandSender, cmd: Command, alias: String, args: Array<String>): Boolean {
+    override fun onCommand(s: CommandSender, cmd: Command, alias: String, args: Array<String>): Boolean {
+
+        this.args = ArrayList(listOf(*args)) // put args into arraylist
+        sender = s // set the sender
 
         if (args.size == 1 && args[0] == "?") { // if user is running the help function
             sendMessage(sender, helpMessage)
@@ -78,7 +82,7 @@ abstract class CoreCMD protected constructor(
         }
 
 
-        Context(sender, args).run() // run the main code
+        run() // run the main code
 
         return true
     }

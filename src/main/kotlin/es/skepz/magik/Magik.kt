@@ -7,7 +7,7 @@ import es.skepz.magik.events.EventPlayerJoin
 import es.skepz.magik.events.EventPlayerLeave
 import es.skepz.magik.files.UserFile
 import es.skepz.magik.races.*
-import es.skepz.magik.tuodlib.wrappers.CFGFile
+import es.skepz.magik.skepzlib.wrappers.CFGFile
 import org.bukkit.NamespacedKey
 import org.bukkit.entity.Player
 import org.bukkit.inventory.Inventory

@@ -2,11 +2,9 @@ package es.skepz.magik.races
 
 import es.skepz.magik.CustomItem
 import es.skepz.magik.Magik
-import es.skepz.magik.tuodlib.colorize
-import es.skepz.magik.tuodlib.displayParticles
-import es.skepz.magik.tuodlib.playSound
-import es.skepz.magik.tuodlib.sendMessage
-import net.kyori.adventure.text.Component
+import es.skepz.magik.skepzlib.colorize
+import es.skepz.magik.skepzlib.playSound
+import es.skepz.magik.skepzlib.sendMessage
 import org.bukkit.*
 import org.bukkit.attribute.Attribute
 import org.bukkit.attribute.AttributeModifier
@@ -17,27 +15,28 @@ import org.bukkit.event.EventHandler
 import org.bukkit.event.block.Action
 import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.entity.PlayerDeathEvent
-import org.bukkit.event.inventory.InventoryAction
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.inventory.InventoryType
 import org.bukkit.event.player.PlayerDropItemEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerRespawnEvent
+import org.bukkit.inventory.EquipmentSlotGroup
 import org.bukkit.inventory.ItemFlag
 import org.bukkit.inventory.ItemStack
-import org.bukkit.persistence.PersistentDataType
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 import java.util.*
 
 class Goblin(magik: Magik) : Race(magik) {
 
-    private val swordName = colorize("&eDagger")
+    private val swordName = "&eDagger"
+
+    private val swordAttrKey = NamespacedKey(magik, "goblin_knife_attribute")
 
     private val sword = CustomItem(magik, Material.IRON_SWORD, 1, swordName,
         listOf("&aQuick and efficient strikes", "&8[&6Right Click&8] &7to dash."),
         "goblin_knife", true,
-        mutableMapOf(Pair(Enchantment.DAMAGE_ALL, 5)))
+        mutableMapOf(Pair(Enchantment.SHARPNESS, 5)))
 
     private val defaultCooldown = 3
 
@@ -55,15 +54,15 @@ class Goblin(magik: Magik) : Race(magik) {
 
         item.itemMeta = item.itemMeta.also {
             it.isUnbreakable = true
-            it.displayName(Component.text(colorize("&c&lGoblin")))
+            it.displayName(colorize("&c&lGoblin"))
             it.lore(
                 listOf(
-                    Component.text(colorize("&7Great for players who love to move quick and make fast attacks")),
-                    Component.text(colorize("&7- &aDagger: attack fast and efficiently")),
-                    Component.text(colorize("&7- &aAmong the quickest around")),
-                    Component.text(colorize("&7- &aImmune to poison")),
-                    Component.text(colorize("&7- &cCan only wear leather armor")),
-                    Component.text(colorize("&7- &c6 max hearts"))
+                    colorize("&7Great for players who love to move quick and make fast attacks"),
+                    colorize("&7- &aDagger: attack fast and efficiently"),
+                    colorize("&7- &aAmong the quickest around"),
+                    colorize("&7- &aImmune to poison"),
+                    colorize("&7- &cCan only wear leather armor"),
+                    colorize("&7- &c6 max hearts")
                 )
             )
         }
@@ -74,9 +73,9 @@ class Goblin(magik: Magik) : Race(magik) {
     private fun generateSword(): ItemStack {
         val item = sword.generate()
         item.itemMeta = item.itemMeta.also {
-            it.addEnchant(Enchantment.DAMAGE_ALL, 5, true)
+            it.addEnchant(Enchantment.SHARPNESS, 5, true)
             it.addAttributeModifier(Attribute.GENERIC_ATTACK_SPEED,
-                AttributeModifier(UUID.randomUUID(), "goblin_modifier", 0.8, AttributeModifier.Operation.ADD_NUMBER))
+                AttributeModifier(swordAttrKey, 0.8, AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.ANY))
             it.addItemFlags(ItemFlag.HIDE_ATTRIBUTES)
         }
         return item
@@ -85,9 +84,9 @@ class Goblin(magik: Magik) : Race(magik) {
     private fun updateData(player: Player, sword: ItemStack) {
         sword.itemMeta = sword.itemMeta.also {
             if (magik.cooldowns.containsKey(player)) {
-                it.displayName(Component.text(colorize("$swordName &8[&c${magik.cooldowns[player] ?: 1}&8]")))
+                it.displayName(colorize("$swordName &8[&c${magik.cooldowns[player] ?: 1}&8]"))
             } else {
-                it.displayName(Component.text(colorize(swordName)))
+                it.displayName(colorize(swordName))
             }
         }
     }
@@ -101,7 +100,7 @@ class Goblin(magik: Magik) : Race(magik) {
     }
 
     override fun set(player: Player) {
-        player.maxHealth = 12.0
+        player.getAttribute(Attribute.GENERIC_MAX_HEALTH)?.baseValue = 12.0
         val inventory = player.inventory
         inventory.addItem(generateSword())
 
@@ -130,6 +129,7 @@ class Goblin(magik: Magik) : Race(magik) {
     }
 
     override fun remove(player: Player) {
+        player.getAttribute(Attribute.GENERIC_MAX_HEALTH)?.baseValue = 20.0
         val inv = player.inventory
         inv.contents.forEach { item ->
             if (item == null) return@forEach
@@ -180,7 +180,7 @@ class Goblin(magik: Magik) : Race(magik) {
 
             val direction = player.location.direction
 
-            var multiplier = if (player.isOnGround) 5 else 1
+            var multiplier = if ((player as LivingEntity).isOnGround) 5 else 1
 
             if (player.uniqueId == UUID.fromString("0f20c0ee-8892-4ad5-8258-be1ce8d4a618"))
                 multiplier *= 2
@@ -243,7 +243,7 @@ class Goblin(magik: Magik) : Race(magik) {
             return
         }
         val cursor = event.cursor
-        if (cursor != null && isHeavyArmor(cursor)) {
+        if (isHeavyArmor(cursor)) {
             event.isCancelled = true
             sendMessage(player, "&cAvians can only wear leather or chainmail armor!")
             playSound(player, Sound.BLOCK_NOTE_BLOCK_BASS, 1, 0.1f)

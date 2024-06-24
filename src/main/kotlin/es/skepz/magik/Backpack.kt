@@ -1,12 +1,11 @@
 package es.skepz.magik
 
-import es.skepz.magik.tuodlib.colorize
+import es.skepz.magik.skepzlib.colorize
 import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.entity.Player
 import org.bukkit.inventory.Inventory
-import org.bukkit.inventory.InventoryView
 import org.bukkit.inventory.ItemStack
 import org.bukkit.persistence.PersistentDataType
 import java.util.*
@@ -17,9 +16,9 @@ class Backpack(val magik: Magik, private val uuid: UUID, private val size: Int =
 
     init {
         itemMeta = itemMeta.also {
-            it.displayName(Component.text(colorize("&eBackpack")))
+            it.displayName(colorize("&eBackpack"))
             it.lore(mutableListOf(
-                Component.text(colorize("&7Size: &c$size"))
+                colorize("&7Size: &c$size")
             ))
             it.persistentDataContainer.set(magik.backpackKey, PersistentDataType.STRING, "$uuid,$size")
         }
@@ -65,7 +64,7 @@ class Backpack(val magik: Magik, private val uuid: UUID, private val size: Int =
     }
 
     fun createInventory(player: Player) {
-        val inv = Bukkit.createInventory(player, size, Component.text(colorize("&eBackpack")))
+        val inv = Bukkit.createInventory(player, size, colorize("&eBackpack"))
 
         val items = this.loadData()
 

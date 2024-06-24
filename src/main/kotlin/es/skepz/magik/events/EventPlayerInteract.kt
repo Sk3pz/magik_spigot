@@ -3,7 +3,7 @@ package es.skepz.magik.events
 import es.skepz.magik.Backpack
 import es.skepz.magik.Magik
 import es.skepz.magik.races.createInventory
-import es.skepz.magik.tuodlib.wrappers.CoreEvent
+import es.skepz.magik.skepzlib.wrappers.CoreEvent
 import org.bukkit.GameMode
 import org.bukkit.event.EventHandler
 import org.bukkit.event.block.Action

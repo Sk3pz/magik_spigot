@@ -2,38 +2,36 @@ package es.skepz.magik.races
 
 import es.skepz.magik.CustomItem
 import es.skepz.magik.Magik
-import es.skepz.magik.tuodlib.colorize
-import es.skepz.magik.tuodlib.displayParticles
-import es.skepz.magik.tuodlib.playSound
-import es.skepz.magik.tuodlib.sendMessage
-import net.kyori.adventure.text.Component
+import es.skepz.magik.skepzlib.colorize
+import es.skepz.magik.skepzlib.displayParticles
+import es.skepz.magik.skepzlib.playSound
+import es.skepz.magik.skepzlib.sendMessage
 import org.bukkit.*
+import org.bukkit.attribute.Attribute
 import org.bukkit.enchantments.Enchantment
+import org.bukkit.entity.LivingEntity
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.block.Action
 import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.entity.PlayerDeathEvent
-import org.bukkit.event.inventory.InventoryAction
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.inventory.InventoryType
 import org.bukkit.event.player.PlayerDropItemEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerRespawnEvent
 import org.bukkit.inventory.ItemStack
-import org.bukkit.persistence.PersistentDataType
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
-import org.bukkit.util.Vector
 
 class Blazeborn(magik: Magik) : Race(magik) {
 
-    private val rodName = colorize("&6Rod of Fire")
+    private val rodName = "&6Rod of Fire"
 
     private val rod = CustomItem(magik, Material.BLAZE_ROD, 1, rodName,
         listOf("&aA flaming rod only you can wield", "&8[&6Right Click&8] &7to fire boost while in the air."),
         "blazeborn_rod", false,
-        mutableMapOf(Pair(Enchantment.DAMAGE_ALL, 10), Pair(Enchantment.FIRE_ASPECT, 2)))
+        mutableMapOf(Pair(Enchantment.SHARPNESS, 10), Pair(Enchantment.FIRE_ASPECT, 2)))
 
     private val defaultCooldown = 5
 
@@ -50,9 +48,9 @@ class Blazeborn(magik: Magik) : Race(magik) {
             player.addPotionEffect(PotionEffect(PotionEffectType.POISON, 2, 5 * 20, false, false))
         }
         if (player.location.world.environment == World.Environment.NORMAL) {
-            player.maxHealth = 18.0
+            player.getAttribute(Attribute.GENERIC_MAX_HEALTH)?.baseValue = 18.0
         } else {
-            player.resetMaxHealth()
+            player.getAttribute(Attribute.GENERIC_MAX_HEALTH)?.baseValue = 20.0
         }
     }
 
@@ -61,14 +59,14 @@ class Blazeborn(magik: Magik) : Race(magik) {
 
         item.itemMeta = item.itemMeta.also {
             it.isUnbreakable = true
-            it.displayName(Component.text(colorize("&6&lBlazeborn")))
+            it.displayName(colorize("&6&lBlazeborn"))
             it.lore(listOf(
-                Component.text(colorize("&7Feel the lava pulsing in your veins")), // change this
-                Component.text(colorize("&7- &aRod of Fire: Boost yourself with fire")),
-                Component.text(colorize("&7- &aImmune to fire damage")),
-                Component.text(colorize("&7- &aRegenerate health in lava")),
-                Component.text(colorize("&7- &cAllergic to water")),
-                Component.text(colorize("&7- &cLess health in the overworld"))))
+                colorize("&7Feel the lava pulsing in your veins"), // change this
+                colorize("&7- &aRod of Fire: Boost yourself with fire"),
+                colorize("&7- &aImmune to fire damage"),
+                colorize("&7- &aRegenerate health in lava"),
+                colorize("&7- &cAllergic to water"),
+                colorize("&7- &cLess health in the overworld")))
         }
 
         return item
@@ -77,9 +75,9 @@ class Blazeborn(magik: Magik) : Race(magik) {
     private fun updateData(player: Player, sword: ItemStack) {
         sword.itemMeta = sword.itemMeta.also {
             if (magik.cooldowns.containsKey(player)) {
-                it.displayName(Component.text(colorize("$rodName &8[&c${magik.cooldowns[player] ?: 0}&8]")))
+                it.displayName(colorize("$rodName &8[&c${magik.cooldowns[player] ?: 0}&8]"))
             } else {
-                it.displayName(Component.text(colorize(rodName)))
+                it.displayName(colorize(rodName))
             }
         }
     }
@@ -98,7 +96,7 @@ class Blazeborn(magik: Magik) : Race(magik) {
     }
 
     override fun remove(player: Player) {
-        player.resetMaxHealth()
+        player.getAttribute(Attribute.GENERIC_MAX_HEALTH)?.baseValue = 20.0
         val inv = player.inventory
         inv.contents.forEach { item ->
             if (item == null) return@forEach
@@ -126,7 +124,7 @@ class Blazeborn(magik: Magik) : Race(magik) {
                 return
             }
 
-            if (player.isOnGround) return
+            if ((player as LivingEntity).isOnGround) return
 
             displayParticles(player.location, Particle.FLAME, 50, 0.2, 0.2, 0.2)
             val direction = player.location.direction

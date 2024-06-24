@@ -1,12 +1,9 @@
 package es.skepz.magik.races
 
 import es.skepz.magik.Magik
-import es.skepz.magik.tuodlib.colorize
-import net.kyori.adventure.text.Component
+import es.skepz.magik.skepzlib.colorize
 import org.bukkit.Material
 import org.bukkit.entity.Player
-import org.bukkit.event.EventHandler
-import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.inventory.ItemStack
 
 class Human(magik: Magik) : Race(magik) {
@@ -21,10 +18,10 @@ class Human(magik: Magik) : Race(magik) {
 
         item.itemMeta = item.itemMeta.also {
             it.isUnbreakable = true
-            it.displayName(Component.text(colorize("&7&lHuman")))
+            it.displayName(colorize("&7&lHuman"))
             it.lore(listOf(
-                Component.text(colorize("&7Great for players who want the vanilla experience")),
-                Component.text(colorize("&7- No buffs or debuffs"))
+               colorize("&7Great for players who want the vanilla experience"),
+                colorize("&7- No buffs or debuffs")
             ))
         }
 

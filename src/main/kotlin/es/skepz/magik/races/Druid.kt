@@ -2,9 +2,9 @@ package es.skepz.magik.races
 
 import es.skepz.magik.CustomItem
 import es.skepz.magik.Magik
-import es.skepz.magik.tuodlib.*
-import net.kyori.adventure.text.Component
+import es.skepz.magik.skepzlib.*
 import org.bukkit.*
+import org.bukkit.attribute.Attribute
 import org.bukkit.block.Block
 import org.bukkit.block.data.Ageable
 import org.bukkit.enchantments.Enchantment
@@ -15,17 +15,14 @@ import org.bukkit.event.block.Action
 import org.bukkit.event.block.BlockBreakEvent
 import org.bukkit.event.entity.EntityDamageByEntityEvent
 import org.bukkit.event.entity.PlayerDeathEvent
-import org.bukkit.event.inventory.InventoryAction
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.inventory.InventoryType
 import org.bukkit.event.player.PlayerDropItemEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerRespawnEvent
 import org.bukkit.inventory.ItemStack
-import org.bukkit.persistence.PersistentDataType
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
-import java.util.*
 import kotlin.math.ceil
 import kotlin.math.min
 
@@ -62,10 +59,10 @@ class Druid(magik: Magik) : Race(magik) {
         }
 
         if (loc.world.environment == World.Environment.NETHER || loc.world.environment == World.Environment.THE_END) {
-            player.maxHealth = maxHealth - 2.0
+            player.getAttribute(Attribute.GENERIC_MAX_HEALTH)?.baseValue = maxHealth - 2.0
         }
         else {
-            player.maxHealth = maxHealth
+            player.getAttribute(Attribute.GENERIC_MAX_HEALTH)?.baseValue = maxHealth
         }
     }
 
@@ -74,19 +71,19 @@ class Druid(magik: Magik) : Race(magik) {
 
         item.itemMeta = item.itemMeta.also {
             it.isUnbreakable = true
-            it.displayName(Component.text(colorize("&a&lDruid")))
+            it.displayName(colorize("&a&lDruid"))
             it.lore(listOf(
-                Component.text(colorize("&7Great for farmers")),
-                Component.text(colorize("&7- &aStick Of Life: grows crops")),
-                Component.text(colorize("&7- &aRegen when on grass")),
-                Component.text(colorize("&7- &aPoison thorns")),
-                Component.text(colorize("  &8- &aPoisons your attackers")),
-                Component.text(colorize("  &8- &cActs like regen to undead mobs")),
-                Component.text(colorize("&7- &aQuicker than most")),
-                Component.text(colorize("&7- &aAutomatically replants crops")),
-                Component.text(colorize("&7- &a2x crop yield")),
-                Component.text(colorize("&7- &c8 max health")),
-                Component.text(colorize("&7- &cDecreased max health in Nether and End"))))
+                colorize("&7Great for farmers"),
+                colorize("&7- &aStick Of Life: grows crops"),
+                colorize("&7- &aRegen when on grass"),
+                colorize("&7- &aPoison thorns"),
+                colorize("  &8- &aPoisons your attackers"),
+                colorize("  &8- &cActs like regen to undead mobs"),
+                colorize("&7- &aQuicker than most"),
+                colorize("&7- &aAutomatically replants crops"),
+                colorize("&7- &a2x crop yield"),
+                colorize("&7- &c8 max health"),
+                colorize("&7- &cDecreased max health in Nether and End")))
         }
 
         return item
@@ -106,7 +103,7 @@ class Druid(magik: Magik) : Race(magik) {
     }
 
     override fun remove(player: Player) {
-        player.resetMaxHealth()
+        player.getAttribute(Attribute.GENERIC_MAX_HEALTH)?.baseValue = 20.0
         val inv = player.inventory
         inv.contents.forEach { item ->
             if (item == null) return@forEach
@@ -122,9 +119,9 @@ class Druid(magik: Magik) : Race(magik) {
     private fun updateData(player: Player, stick: ItemStack) {
         stick.itemMeta = stick.itemMeta.also {
             if (magik.cooldowns.containsKey(player)) {
-                it.displayName(Component.text(colorize("$stickName &8[&c${(magik.cooldowns[player] ?: 1)}&8]")))
+                it.displayName(colorize("$stickName &8[&c${(magik.cooldowns[player] ?: 1)}&8]"))
             } else if (usageMap.containsKey(player)) {
-                it.displayName(Component.text(colorize("$stickName &8[&f${(usageMap[player] ?: 1)}&8]")))
+                it.displayName(colorize("$stickName &8[&f${(usageMap[player] ?: 1)}&8]"))
             }
         }
     }
@@ -136,8 +133,8 @@ class Druid(magik: Magik) : Race(magik) {
 
             val meta = harvestItem.itemMeta
 
-            if (meta.hasEnchant(Enchantment.LOOT_BONUS_BLOCKS)) {
-	            enchLevel += harvestItem.getEnchantmentLevel(Enchantment.LOOT_BONUS_BLOCKS)
+            if (meta.hasEnchant(Enchantment.FORTUNE)) {
+	            enchLevel += harvestItem.getEnchantmentLevel(Enchantment.FORTUNE)
             }
         }
 
@@ -231,7 +228,7 @@ class Druid(magik: Magik) : Race(magik) {
 
         if (ageable.age >= ageable.maximumAge) {
             if (!player.isSneaking) {
-                displayParticles(block.location, Particle.VILLAGER_HAPPY, 10, 1.0, 1.0, 1.0)
+                displayParticles(block.location, Particle.HAPPY_VILLAGER, 10, 1.0, 1.0, 1.0)
                 harvest(block, null)
                 useStick(player)
             }
@@ -273,7 +270,7 @@ class Druid(magik: Magik) : Race(magik) {
             ?: return
 
         attacker.addPotionEffect(PotionEffect(PotionEffectType.POISON, 5 * 20, 1))
-        displayParticles(player.location, Particle.VILLAGER_HAPPY, 20, 1.0, 2.0, 1.0)
+        displayParticles(player.location, Particle.HAPPY_VILLAGER, 20, 1.0, 2.0, 1.0)
     }
 
     @EventHandler

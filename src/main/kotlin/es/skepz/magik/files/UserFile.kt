@@ -3,7 +3,7 @@ package es.skepz.magik.files
 import es.skepz.magik.Magik
 import es.skepz.magik.races.Race
 import es.skepz.magik.races.raceFromName
-import es.skepz.magik.tuodlib.wrappers.CFGFile
+import es.skepz.magik.skepzlib.wrappers.CFGFile
 import org.bukkit.entity.Player
 
 class UserFile(plugin: Magik, player: Player) : CFGFile(plugin, player.uniqueId.toString(), "users") {
@@ -13,7 +13,7 @@ class UserFile(plugin: Magik, player: Player) : CFGFile(plugin, player.uniqueId.
     }
 
     fun getRace(): Race? {
-        return raceFromName(plugin, cfg.getString("race").orEmpty())
+        return raceFromName(plugin as Magik, cfg.getString("race").orEmpty())
     }
 
     fun setRace(r: Race) {

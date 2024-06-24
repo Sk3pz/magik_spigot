@@ -3,8 +3,8 @@ package es.skepz.magik.commands
 import es.skepz.magik.Backpack
 import es.skepz.magik.Magik
 import es.skepz.magik.races.*
-import es.skepz.magik.tuodlib.sendMessage
-import es.skepz.magik.tuodlib.wrappers.CoreCMD
+import es.skepz.magik.skepzlib.sendMessage
+import es.skepz.magik.skepzlib.wrappers.CoreCMD
 import org.bukkit.Bukkit
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
@@ -12,7 +12,7 @@ import org.bukkit.entity.Player
 class MagikCommand(val magik: Magik) : CoreCMD(magik, "magik", "&c/magik <&7set&c|&7check&c|&7inv&c|&7give&c>",
     1, "magik.set_race", true, true) {
 
-    override fun Context.run() {
+    override fun run() {
         val player = sender as Player
 
         when (args[0].lowercase()) {

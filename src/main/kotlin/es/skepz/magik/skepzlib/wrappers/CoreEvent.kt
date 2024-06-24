@@ -1,9 +1,9 @@
-package es.skepz.magik.tuodlib.wrappers
+package es.skepz.magik.skepzlib.wrappers
 
 import org.bukkit.event.Listener
 import org.bukkit.plugin.java.JavaPlugin
 
-open class CoreEvent(val plugin: JavaPlugin) : Listener {
+open class CoreEvent(private val plugin: JavaPlugin) : Listener {
 
     fun register() {
         plugin.server.pluginManager.registerEvents(this, plugin)

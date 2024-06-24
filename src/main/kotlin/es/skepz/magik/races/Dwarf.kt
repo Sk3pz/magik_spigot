@@ -2,12 +2,12 @@ package es.skepz.magik.races
 
 import es.skepz.magik.CustomItem
 import es.skepz.magik.Magik
-import es.skepz.magik.tuodlib.colorize
-import es.skepz.magik.tuodlib.dropItem
-import es.skepz.magik.tuodlib.playSound
-import es.skepz.magik.tuodlib.sendMessage
-import net.kyori.adventure.text.Component
+import es.skepz.magik.skepzlib.colorize
+import es.skepz.magik.skepzlib.dropItem
+import es.skepz.magik.skepzlib.playSound
+import es.skepz.magik.skepzlib.sendMessage
 import org.bukkit.*
+import org.bukkit.attribute.Attribute
 import org.bukkit.block.Block
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.Player
@@ -15,21 +15,15 @@ import org.bukkit.event.EventHandler
 import org.bukkit.event.block.Action
 import org.bukkit.event.block.BlockBreakEvent
 import org.bukkit.event.entity.PlayerDeathEvent
-import org.bukkit.event.inventory.InventoryAction
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.inventory.InventoryType
 import org.bukkit.event.player.PlayerDropItemEvent
 import org.bukkit.event.player.PlayerInteractEvent
-import org.bukkit.event.player.PlayerMoveEvent
 import org.bukkit.event.player.PlayerRespawnEvent
 import org.bukkit.inventory.ItemStack
-import org.bukkit.persistence.PersistentDataType
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
-import java.lang.Math.pow
 import java.util.*
-import kotlin.collections.HashSet
-import kotlin.math.pow
 
 class Dwarf(magik: Magik) : Race(magik) {
 
@@ -37,7 +31,7 @@ class Dwarf(magik: Magik) : Race(magik) {
     private val pickaxe = CustomItem(magik, Material.NETHERITE_PICKAXE, 1, "&cDwarven Pickaxe &8(&6mine&8)",
         listOf("&4Forged in the fires of the nether", "&8[&6Right Click&8] &7while holding to change modes."),
         "dwarven_pickaxe", true,
-        mutableMapOf(Pair(Enchantment.DAMAGE_ALL, 5), Pair(Enchantment.LOOT_BONUS_BLOCKS, 3)))
+        mutableMapOf(Pair(Enchantment.SHARPNESS, 5), Pair(Enchantment.FORTUNE, 3)))
 
     private val playerMode = mutableMapOf<UUID, PickaxeMode>()
     private val smeltingPower = mutableMapOf<UUID, Int>()
@@ -58,11 +52,11 @@ class Dwarf(magik: Magik) : Race(magik) {
     }
 
     override fun update(player: Player) {
-        player.addPotionEffect(PotionEffect(PotionEffectType.SLOW, 2, 1, false, false))
+        player.addPotionEffect(PotionEffect(PotionEffectType.SLOWNESS, 2, 1, false, false))
         player.addPotionEffect(PotionEffect(PotionEffectType.HUNGER, 2, 0, false, false))
 
         if (player.location.block.lightFromSky <= 10) {
-            player.addPotionEffect(PotionEffect(PotionEffectType.FAST_DIGGING, 2, 1, false, false))
+            player.addPotionEffect(PotionEffect(PotionEffectType.HASTE, 2, 1, false, false))
         }
     }
 
@@ -71,15 +65,15 @@ class Dwarf(magik: Magik) : Race(magik) {
 
         item.itemMeta = item.itemMeta.also {
             it.isUnbreakable = true
-            it.displayName(Component.text(colorize("&8&lDwarf")))
+            it.displayName(colorize("&8&lDwarf"))
             it.lore(listOf(
-                Component.text(colorize("&7Great for players who love to mine")),
-                Component.text(colorize("&7- &aDwarven Pickaxe: different modes to help mine")),
-                Component.text(colorize("&7- &aQuicker at digging")),
-                Component.text(colorize("&7- &a2 more hearts")),
-                Component.text(colorize("&7- &cSlower than most")),
-                Component.text(colorize("&7- &cHungrier than normal")),
-                //Component.text(colorize("&7- &cTrouble seeing above ground")),
+                colorize("&7Great for players who love to mine"),
+                colorize("&7- &aDwarven Pickaxe: different modes to help mine"),
+                colorize("&7- &aQuicker at digging"),
+                colorize("&7- &a2 more hearts"),
+                colorize("&7- &cSlower than most"),
+                colorize("&7- &cHungrier than normal"),
+                colorize("&7- &71.5 blocks tall"),
             ))
         }
 
@@ -104,14 +98,16 @@ class Dwarf(magik: Magik) : Race(magik) {
     }
 
     override fun set(player: Player) {
-        player.maxHealth = maxHealth
+        player.getAttribute(Attribute.GENERIC_MAX_HEALTH)?.baseValue = maxHealth
+        player.getAttribute(Attribute.GENERIC_SCALE)?.baseValue = 0.75
         playerMode[player.uniqueId] = PickaxeMode.Mine
 
         player.inventory.addItem(pickaxe.generate())
     }
 
     override fun remove(player: Player) {
-        player.resetMaxHealth()
+        player.getAttribute(Attribute.GENERIC_MAX_HEALTH)?.baseValue = 20.0
+        player.getAttribute(Attribute.GENERIC_SCALE)?.baseValue = 1.0
         val inv = player.inventory
         inv.contents.forEach { item ->
             if (item == null) return@forEach
@@ -149,7 +145,7 @@ class Dwarf(magik: Magik) : Race(magik) {
 
     private fun updateName(player: Player, pick: ItemStack, mode: PickaxeMode) {
         pick.itemMeta = pick.itemMeta.also { meta ->
-            meta.displayName(Component.text(colorize("&cDwarven Pickaxe ${modeToName(player, mode)}")))
+            meta.displayName(colorize("&cDwarven Pickaxe ${modeToName(player, mode)}"))
         }
     }
 
@@ -162,17 +158,17 @@ class Dwarf(magik: Magik) : Race(magik) {
                 meta.removeEnchant(it)
             }
 
-            meta.addEnchant(Enchantment.DAMAGE_ALL, 5, true)
+            meta.addEnchant(Enchantment.SHARPNESS, 5, true)
 
             when (mode) {
                 PickaxeMode.Mine  -> {
-                    meta.addEnchant(Enchantment.LOOT_BONUS_BLOCKS, 3, true)
+                    meta.addEnchant(Enchantment.FORTUNE, 3, true)
                 }
                 PickaxeMode.Silk  -> {
                     meta.addEnchant(Enchantment.SILK_TOUCH, 1, true)
                 }
                 PickaxeMode.Fast -> {
-                    meta.addEnchant(Enchantment.DIG_SPEED, 5, true)
+                    meta.addEnchant(Enchantment.EFFICIENCY, 5, true)
                 }
                 else -> {}
             }

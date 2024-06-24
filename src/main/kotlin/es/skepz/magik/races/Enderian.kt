@@ -2,43 +2,38 @@ package es.skepz.magik.races
 
 import es.skepz.magik.CustomItem
 import es.skepz.magik.Magik
-import es.skepz.magik.tuodlib.*
-import net.kyori.adventure.text.Component
+import es.skepz.magik.skepzlib.*
 import org.bukkit.Material
-import org.bukkit.NamespacedKey
 import org.bukkit.Sound
 import org.bukkit.World
+import org.bukkit.attribute.Attribute
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.Arrow
-import org.bukkit.entity.LivingEntity
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.block.Action
 import org.bukkit.event.block.BlockBreakEvent
 import org.bukkit.event.entity.EntityDamageByEntityEvent
 import org.bukkit.event.entity.PlayerDeathEvent
-import org.bukkit.event.inventory.InventoryAction
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.inventory.InventoryType
 import org.bukkit.event.player.PlayerDropItemEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerRespawnEvent
 import org.bukkit.inventory.ItemStack
-import org.bukkit.persistence.PersistentDataType
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
-import org.bukkit.util.RayTraceResult
 import org.bukkit.util.Vector
 import java.util.*
 
 class Enderian(magik: Magik) : Race(magik) {
 
-    private val swordName = colorize("&5Sword of the End")
+    private val swordName = "&5Sword of the End"
 
     private val sword = CustomItem(magik, Material.DIAMOND_SWORD, 1, swordName,
         listOf("&dThe power of the end in your fingertips", "&8[&6Right Click&8] &7to teleport."),
         "enderian_sword", true,
-        mutableMapOf(Pair(Enchantment.DAMAGE_ALL, 5), Pair(Enchantment.KNOCKBACK, 2)))
+        mutableMapOf(Pair(Enchantment.SHARPNESS, 5), Pair(Enchantment.KNOCKBACK, 2)))
 
     private val defaultCooldown = 6
 
@@ -52,9 +47,9 @@ class Enderian(magik: Magik) : Race(magik) {
     override fun update(player: Player) {
         if (player.location.world.environment == World.Environment.THE_END) {
             player.addPotionEffect(PotionEffect(PotionEffectType.REGENERATION, 2, 0, false, false))
-            player.resetMaxHealth()
+            player.getAttribute(Attribute.GENERIC_MAX_HEALTH)?.baseValue = 20.0
         } else {
-            player.maxHealth = 18.0
+            player.getAttribute(Attribute.GENERIC_MAX_HEALTH)?.baseValue =  18.0
         }
     }
 
@@ -63,16 +58,16 @@ class Enderian(magik: Magik) : Race(magik) {
 
         item.itemMeta = item.itemMeta.also {
             it.isUnbreakable = true
-            it.displayName(Component.text(colorize("&5&lEnderian")))
+            it.displayName(colorize("&5&lEnderian"))
             it.lore(listOf(
-                Component.text(colorize("&7The power of the end in your fingertips")),
-                Component.text(colorize("&7- &aSword of the End: Teleport where you look")),
-                Component.text(colorize("&7- &aSneak for silk touch")),
-                Component.text(colorize("&7- &aImmune to arrows")),
-                Component.text(colorize("&7- &aRegenerate health in the end")),
-                Component.text(colorize("&7- &cLess health outside the end")),
-                Component.text(colorize("&7- &cCan't use elytra")),
-                Component.text(colorize("&7- &cCan't use shields"))))
+                colorize("&7The power of the end in your fingertips"),
+                colorize("&7- &aSword of the End: Teleport where you look"),
+                colorize("&7- &aSneak for silk touch"),
+                colorize("&7- &aImmune to arrows"),
+                colorize("&7- &aRegenerate health in the end"),
+                colorize("&7- &cLess health outside the end"),
+                colorize("&7- &cCan't use elytra"),
+                colorize("&7- &cCan't use shields")))
         }
 
         return item
@@ -81,9 +76,9 @@ class Enderian(magik: Magik) : Race(magik) {
     private fun updateData(player: Player, sword: ItemStack) {
         sword.itemMeta = sword.itemMeta.also {
             if (magik.cooldowns.containsKey(player)) {
-                it.displayName(Component.text(colorize("$swordName &8[&c${magik.cooldowns[player] ?: 1}&8]")))
+                it.displayName(colorize("$swordName &8[&c${magik.cooldowns[player] ?: 1}&8]"))
             } else {
-                it.displayName(Component.text(colorize(swordName)))
+                it.displayName(colorize(swordName))
             }
         }
     }
@@ -182,7 +177,7 @@ class Enderian(magik: Magik) : Race(magik) {
         }
 
         val cursor = event.cursor
-        if (cursor != null && cursor.type == Material.ELYTRA) {
+        if (cursor.type == Material.ELYTRA) {
             event.isCancelled = true
             sendMessage(player, "&cYou cant wear an elytra as an Enderian!")
             playSound(player, Sound.BLOCK_NOTE_BLOCK_BASS, 1, 0.1f)

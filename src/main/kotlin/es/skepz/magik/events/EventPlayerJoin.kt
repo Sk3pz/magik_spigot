@@ -4,7 +4,7 @@ import es.skepz.magik.Magik
 import es.skepz.magik.files.UserFile
 import es.skepz.magik.races.createInventory
 import es.skepz.magik.races.setRace
-import es.skepz.magik.tuodlib.wrappers.CoreEvent
+import es.skepz.magik.skepzlib.wrappers.CoreEvent
 import org.bukkit.event.EventHandler
 import org.bukkit.event.player.PlayerJoinEvent
 

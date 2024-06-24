@@ -1,10 +1,8 @@
 package es.skepz.magik.races
 
 import es.skepz.magik.Magik
-import es.skepz.magik.tuodlib.colorize
-import es.skepz.magik.tuodlib.sendMessage
-import es.skepz.magik.tuodlib.serverBroadcast
-import net.kyori.adventure.text.Component
+import es.skepz.magik.skepzlib.colorize
+import es.skepz.magik.skepzlib.serverBroadcast
 import org.bukkit.Bukkit
 import org.bukkit.NamespacedKey
 import org.bukkit.entity.Player
@@ -66,7 +64,7 @@ fun getRace(magik: Magik, player: Player): Race? {
 }
 
 fun createInventory(magik: Magik, p: Player) {
-    val inv = Bukkit.createInventory(p, 27, Component.text(colorize("&6Pick your race")))
+    val inv = Bukkit.createInventory(p, 27, colorize("&6Pick your race"))
 
     if (magik.races.isEmpty()) return
 

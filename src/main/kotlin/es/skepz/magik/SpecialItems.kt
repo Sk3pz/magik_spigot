@@ -1,13 +1,9 @@
 package es.skepz.magik
 
-import es.skepz.magik.tuodlib.colorize
-import net.kyori.adventure.text.Component
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
-import org.bukkit.enchantments.Enchantment
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.ShapedRecipe
-import org.bukkit.persistence.PersistentDataType
 
 class SpecialItems(val magik: Magik) {
 

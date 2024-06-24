@@ -1,6 +1,6 @@
 package es.skepz.magik
 
-import es.skepz.magik.tuodlib.colorize
+import es.skepz.magik.skepzlib.colorize
 import net.kyori.adventure.text.Component
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
@@ -19,9 +19,9 @@ class CustomItem(magik: Magik, type: Material, amount: Int = 1,
 
     init {
         itemMeta = itemMeta.also {
-            it.displayName(Component.text(colorize(name)))
+            it.displayName(colorize(name))
             val loreList = lore.map { loreItem ->
-                Component.text(colorize(loreItem))
+                colorize(loreItem)
             }
             it.lore(loreList)
             it.isUnbreakable = unbreakable

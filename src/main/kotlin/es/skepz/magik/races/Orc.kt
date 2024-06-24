@@ -2,23 +2,20 @@ package es.skepz.magik.races
 
 import es.skepz.magik.CustomItem
 import es.skepz.magik.Magik
-import es.skepz.magik.tuodlib.colorize
-import es.skepz.magik.tuodlib.playSound
-import net.kyori.adventure.text.Component
+import es.skepz.magik.skepzlib.colorize
+import es.skepz.magik.skepzlib.playSound
 import org.bukkit.Material
-import org.bukkit.NamespacedKey
 import org.bukkit.Sound
+import org.bukkit.attribute.Attribute
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.entity.PlayerDeathEvent
-import org.bukkit.event.inventory.InventoryAction
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.inventory.InventoryType
 import org.bukkit.event.player.PlayerDropItemEvent
 import org.bukkit.event.player.PlayerRespawnEvent
 import org.bukkit.inventory.ItemStack
-import org.bukkit.persistence.PersistentDataType
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 
@@ -28,15 +25,15 @@ class Orc(magik: Magik) : Race(magik) {
     private val axe = CustomItem(magik, Material.IRON_AXE, 1, "&4Battle Axe",
         listOf("&cME ORC. ME DESTROY YOU."),
         "orc_axe", true,
-        mapOf(Pair(Enchantment.DAMAGE_ALL, 5), Pair(Enchantment.KNOCKBACK, 2)))
+        mapOf(Pair(Enchantment.SHARPNESS, 5), Pair(Enchantment.KNOCKBACK, 2)))
 
     override fun update(player: Player) {
-        player.addPotionEffect(PotionEffect(PotionEffectType.JUMP, 2, 1, false, false))
-        player.addPotionEffect(PotionEffect(PotionEffectType.INCREASE_DAMAGE, 2, 0, false, false))
-        player.addPotionEffect(PotionEffect(PotionEffectType.SLOW, 2, 1, false, false))
+        player.addPotionEffect(PotionEffect(PotionEffectType.JUMP_BOOST, 2, 1, false, false))
+        player.addPotionEffect(PotionEffect(PotionEffectType.STRENGTH, 2, 0, false, false))
+        player.addPotionEffect(PotionEffect(PotionEffectType.SLOWNESS, 2, 1, false, false))
 
         if (axe.check(player.inventory.itemInMainHand)) {
-            player.addPotionEffect(PotionEffect(PotionEffectType.SLOW_DIGGING, 2, 0, false, false))
+            player.addPotionEffect(PotionEffect(PotionEffectType.MINING_FATIGUE, 2, 0, false, false))
         }
     }
 
@@ -46,15 +43,17 @@ class Orc(magik: Magik) : Race(magik) {
 
         item.itemMeta = item.itemMeta.also {
             it.isUnbreakable = true
-            it.displayName(Component.text(colorize("&4&lOrc")))
+            it.displayName(colorize("&4&lOrc"))
             it.lore(listOf(
-                Component.text(colorize("&7Great for players who like to hit hard")),
-                Component.text(colorize("&7- &aBattle Axe - more damage, slower speed")),
-                Component.text(colorize("  &7- &cBad for chopping trees")),
-                Component.text(colorize("&7- &aJumps really high")),
-                Component.text(colorize("&7- &aStronger than others")),
-                Component.text(colorize("&7- &aDouble health (20 hearts)")),
-                Component.text(colorize("&7- &cSlower than most"))))
+                colorize("&7Great for players who like to hit hard"),
+                colorize("&7- &aBattle Axe - more damage, slower speed"),
+                colorize("  &7- &cBad for chopping trees"),
+                colorize("&7- &aJumps really high"),
+                colorize("&7- &aStronger than others"),
+                colorize("&7- &aDouble health (20 hearts)"),
+                colorize("&7- &cSlower than most"),
+                colorize("&7- &72.5 blocks tall")
+            ))
         }
 
         return item
@@ -69,12 +68,14 @@ class Orc(magik: Magik) : Race(magik) {
     }
 
     override fun set(player: Player) {
-        player.maxHealth = maxHealth
+        player.getAttribute(Attribute.GENERIC_MAX_HEALTH)?.baseValue = maxHealth
+        player.getAttribute(Attribute.GENERIC_SCALE)?.baseValue = 1.5
         player.inventory.addItem(axe.generate())
     }
 
     override fun remove(player: Player) {
-        player.resetMaxHealth()
+        player.getAttribute(Attribute.GENERIC_MAX_HEALTH)?.baseValue = 20.0
+        player.getAttribute(Attribute.GENERIC_SCALE)?.baseValue = 1.0
         val inv = player.inventory
         inv.contents.forEach { item ->
             if (item == null) return@forEach

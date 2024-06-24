@@ -2,29 +2,25 @@ package es.skepz.magik.races
 
 import es.skepz.magik.CustomItem
 import es.skepz.magik.Magik
-import es.skepz.magik.tuodlib.colorize
-import es.skepz.magik.tuodlib.playSound
-import es.skepz.magik.tuodlib.sendMessage
-import net.kyori.adventure.text.Component
+import es.skepz.magik.skepzlib.colorize
+import es.skepz.magik.skepzlib.playSound
+import es.skepz.magik.skepzlib.sendMessage
 import org.bukkit.Material
-import org.bukkit.NamespacedKey
 import org.bukkit.Sound
 import org.bukkit.World
+import org.bukkit.attribute.Attribute
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.Player
 import org.bukkit.entity.Tameable
 import org.bukkit.entity.Wolf
 import org.bukkit.event.EventHandler
 import org.bukkit.event.entity.PlayerDeathEvent
-import org.bukkit.event.inventory.InventoryAction
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.inventory.InventoryType
 import org.bukkit.event.player.PlayerDropItemEvent
-import org.bukkit.event.player.PlayerInteractAtEntityEvent
 import org.bukkit.event.player.PlayerInteractEntityEvent
 import org.bukkit.event.player.PlayerRespawnEvent
 import org.bukkit.inventory.ItemStack
-import org.bukkit.persistence.PersistentDataType
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 
@@ -33,7 +29,7 @@ class Lycan(magik: Magik) : Race(magik) {
     private val claw = CustomItem(magik, Material.PRISMARINE_SHARD, 1, "&cLycan Claw",
         listOf("&cStronger at night...", "&8[&6Right Click&8] &7to tame wolves."),
         "lycan_claw", false,
-        mapOf(Pair(Enchantment.DAMAGE_ALL, 5)))
+        mapOf(Pair(Enchantment.SHARPNESS, 5)))
 
     override fun comingSoon(): Boolean {
         return true
@@ -44,17 +40,17 @@ class Lycan(magik: Magik) : Race(magik) {
         val claw = claw.find(player.inventory)
 
         if (world.environment != World.Environment.NORMAL) {
-            player.maxHealth = 12.0
+            player.getAttribute(Attribute.GENERIC_MAX_HEALTH)?.baseValue = 12.0
             player.addPotionEffect(PotionEffect(PotionEffectType.WEAKNESS, 2, 0, false, false))
             if (claw != null) {
                 claw.itemMeta = claw.itemMeta.also {
-                    val sharpnessLVL = it.getEnchantLevel(Enchantment.DAMAGE_ALL)
+                    val sharpnessLVL = it.getEnchantLevel(Enchantment.SHARPNESS)
                     if (sharpnessLVL != 1) {
-                        it.addEnchant(Enchantment.DAMAGE_ALL, 1, false)
+                        it.addEnchant(Enchantment.SHARPNESS, 1, false)
                         it.lore(
                             listOf(
-                                Component.text(colorize("&cThere is no moon here. You feel weak.")),
-                                Component.text(colorize("&8[&6Right Click&8] &7to tame wolves."))
+                                colorize("&cThere is no moon here. You feel weak."),
+                                colorize("&8[&6Right Click&8] &7to tame wolves.")
                             )
                         )
                     }
@@ -67,13 +63,13 @@ class Lycan(magik: Magik) : Race(magik) {
             // day
             if (claw != null) {
                 claw.itemMeta = claw.itemMeta.also {
-                    val sharpnessLVL = it.getEnchantLevel(Enchantment.DAMAGE_ALL)
+                    val sharpnessLVL = it.getEnchantLevel(Enchantment.SHARPNESS)
                     if (sharpnessLVL != 3) {
-                        it.addEnchant(Enchantment.DAMAGE_ALL, 3, false)
+                        it.addEnchant(Enchantment.SHARPNESS, 3, false)
                         it.lore(
                             listOf(
-                                Component.text(colorize("&cStronger at night...")),
-                                Component.text(colorize("&8[&6Right Click&8] &7to tame wolves."))
+                                colorize("&cStronger at night..."),
+                                colorize("&8[&6Right Click&8] &7to tame wolves.")
                             )
                         )
                     }
@@ -81,20 +77,20 @@ class Lycan(magik: Magik) : Race(magik) {
             }
         } else {
             // night
-            player.maxHealth = 28.0
-            player.addPotionEffect(PotionEffect(PotionEffectType.JUMP, 2, 1, false, false))
+            player.getAttribute(Attribute.GENERIC_MAX_HEALTH)?.baseValue = 28.0
+            player.addPotionEffect(PotionEffect(PotionEffectType.JUMP_BOOST, 2, 1, false, false))
             player.addPotionEffect(PotionEffect(PotionEffectType.SPEED, 2, 0, false, false))
-            player.addPotionEffect(PotionEffect(PotionEffectType.INCREASE_DAMAGE, 2, 0, false, false))
-            player.addPotionEffect(PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, 2, 0, false, false))
+            player.addPotionEffect(PotionEffect(PotionEffectType.STRENGTH, 2, 0, false, false))
+            player.addPotionEffect(PotionEffect(PotionEffectType.RESISTANCE, 2, 0, false, false))
             if (claw != null) {
                 claw.itemMeta = claw.itemMeta.also {
-                    val sharpnessLVL = it.getEnchantLevel(Enchantment.DAMAGE_ALL)
+                    val sharpnessLVL = it.getEnchantLevel(Enchantment.SHARPNESS)
                     if (sharpnessLVL != 10) {
-                        it.addEnchant(Enchantment.DAMAGE_ALL, 10, true)
+                        it.addEnchant(Enchantment.SHARPNESS, 10, true)
                         it.lore(
                             listOf(
-                                Component.text(colorize("&cATTACK")),
-                                Component.text(colorize("&8[&6Right Click&8] &7to tame wolves."))
+                                colorize("&cATTACK"),
+                                colorize("&8[&6Right Click&8] &7to tame wolves.")
                             )
                         )
                     }
@@ -108,14 +104,14 @@ class Lycan(magik: Magik) : Race(magik) {
 
         item.itemMeta = item.itemMeta.also {
             it.isUnbreakable = true
-            it.displayName(Component.text(colorize("&4&lLycan")))
+            it.displayName(colorize("&4&lLycan"))
             it.lore(listOf(
-                Component.text(colorize("&7All the benefits of a werewolf, without the wolf part")),
-                Component.text(colorize("&7- &aWolf Claw: Attacks stronger at night")),
-                Component.text(colorize("&7- &aExtremely strong at night")),
-                Component.text(colorize("&7- &aTame wolves with no bones")),
-                Component.text(colorize("&7- &cWeak during the day")),
-                Component.text(colorize("&7- &cEven weaker in other dimensions (no moon)")),
+                colorize("&7All the benefits of a werewolf, without the wolf part"),
+                colorize("&7- &aWolf Claw: Attacks stronger at night"),
+                colorize("&7- &aExtremely strong at night"),
+                colorize("&7- &aTame wolves with no bones"),
+                colorize("&7- &cWeak during the day"),
+                colorize("&7- &cEven weaker in other dimensions (no moon)"),
             ))
         }
 
@@ -139,6 +135,7 @@ class Lycan(magik: Magik) : Race(magik) {
     }
 
     override fun remove(player: Player) {
+        player.getAttribute(Attribute.GENERIC_MAX_HEALTH)?.baseValue = 20.0
         val inv = player.inventory
         inv.contents.forEach { item ->
             if (item == null) return@forEach
