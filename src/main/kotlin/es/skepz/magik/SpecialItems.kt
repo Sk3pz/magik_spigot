@@ -30,37 +30,31 @@ class SpecialItems(val magik: Magik) {
         val chelmRecipe = ShapedRecipe(chainhelmKey, ItemStack(Material.CHAINMAIL_HELMET))
         chelmRecipe.shape("ccc", "cac", "aaa")
         chelmRecipe.setIngredient('c', Material.CHAIN)
-        chelmRecipe.setIngredient('a', Material.AIR)
         magik.server.addRecipe(chelmRecipe)
 
         val chelmRecipe2 = ShapedRecipe(chainhelm2Key, ItemStack(Material.CHAINMAIL_HELMET))
         chelmRecipe2.shape("aaa", "ccc", "cac")
         chelmRecipe2.setIngredient('c', Material.CHAIN)
-        chelmRecipe2.setIngredient('a', Material.AIR)
         magik.server.addRecipe(chelmRecipe2)
 
         val cchestRecipe = ShapedRecipe(chainchesKey, ItemStack(Material.CHAINMAIL_CHESTPLATE))
         cchestRecipe.shape("cac", "ccc", "ccc")
         cchestRecipe.setIngredient('c', Material.CHAIN)
-        cchestRecipe.setIngredient('a', Material.AIR)
         magik.server.addRecipe(cchestRecipe)
 
         val clegRecipe = ShapedRecipe(chainlegKey, ItemStack(Material.CHAINMAIL_LEGGINGS))
         clegRecipe.shape("ccc", "cac", "cac")
         clegRecipe.setIngredient('c', Material.CHAIN)
-        clegRecipe.setIngredient('a', Material.AIR)
         magik.server.addRecipe(clegRecipe)
 
         val cbootRecipe = ShapedRecipe(chainbootKey, ItemStack(Material.CHAINMAIL_BOOTS))
         cbootRecipe.shape("cac", "cac", "aaa")
         cbootRecipe.setIngredient('c', Material.CHAIN)
-        cbootRecipe.setIngredient('a', Material.AIR)
         magik.server.addRecipe(cbootRecipe)
 
         val cbootRecipe2 = ShapedRecipe(chainboot2Key, ItemStack(Material.CHAINMAIL_BOOTS))
         cbootRecipe2.shape("aaa", "cac", "cac")
         cbootRecipe2.setIngredient('c', Material.CHAIN)
-        cbootRecipe2.setIngredient('a', Material.AIR)
         magik.server.addRecipe(cbootRecipe2)
     }
 
