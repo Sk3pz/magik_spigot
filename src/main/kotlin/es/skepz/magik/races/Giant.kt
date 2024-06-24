@@ -31,7 +31,7 @@ class Giant(magik: Magik) : Race(magik) {
     }
 
     override fun guiDisplayItem(): ItemStack {
-        val item = ItemStack(Material.BOW, 1)
+        val item = ItemStack(Material.MACE, 1)
 
         item.itemMeta = item.itemMeta.also {
             it.isUnbreakable = true
@@ -46,6 +46,7 @@ class Giant(magik: Magik) : Race(magik) {
                 colorize("&7- &cCan't fit in small spaces"),
                 colorize("&7- &cVery large target"),
                 colorize("&7- &cSlightly slower"),
+                colorize("&7- &cPoor reach"),
             ))
         }
 
