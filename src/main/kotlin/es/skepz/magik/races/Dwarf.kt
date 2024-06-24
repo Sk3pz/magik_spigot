@@ -73,7 +73,7 @@ class Dwarf(magik: Magik) : Race(magik) {
                 colorize("&7- &a2 more hearts"),
                 colorize("&7- &cSlower than most"),
                 colorize("&7- &cHungrier than normal"),
-                colorize("&7- &71.5 blocks tall"),
+                colorize("&7- &71.25 blocks tall"),
             ))
         }
 
@@ -99,7 +99,7 @@ class Dwarf(magik: Magik) : Race(magik) {
 
     override fun set(player: Player) {
         player.getAttribute(Attribute.GENERIC_MAX_HEALTH)?.baseValue = maxHealth
-        player.getAttribute(Attribute.GENERIC_SCALE)?.baseValue = 0.75
+        player.getAttribute(Attribute.GENERIC_SCALE)?.baseValue = 0.625
         playerMode[player.uniqueId] = PickaxeMode.Mine
 
         player.inventory.addItem(pickaxe.generate())

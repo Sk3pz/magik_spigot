@@ -62,7 +62,8 @@ class Goblin(magik: Magik) : Race(magik) {
                     colorize("&7- &aAmong the quickest around"),
                     colorize("&7- &aImmune to poison"),
                     colorize("&7- &cCan only wear leather armor"),
-                    colorize("&7- &c6 max hearts")
+                    colorize("&7- &c6 max hearts"),
+                    colorize("&7- &c1.5 blocks tall")
                 )
             )
         }
@@ -101,6 +102,7 @@ class Goblin(magik: Magik) : Race(magik) {
 
     override fun set(player: Player) {
         player.getAttribute(Attribute.GENERIC_MAX_HEALTH)?.baseValue = 12.0
+        player.getAttribute(Attribute.GENERIC_SCALE)?.baseValue = 0.75
         val inventory = player.inventory
         inventory.addItem(generateSword())
 
@@ -130,6 +132,7 @@ class Goblin(magik: Magik) : Race(magik) {
 
     override fun remove(player: Player) {
         player.getAttribute(Attribute.GENERIC_MAX_HEALTH)?.baseValue = 20.0
+        player.getAttribute(Attribute.GENERIC_SCALE)?.baseValue = 1.0
         val inv = player.inventory
         inv.contents.forEach { item ->
             if (item == null) return@forEach

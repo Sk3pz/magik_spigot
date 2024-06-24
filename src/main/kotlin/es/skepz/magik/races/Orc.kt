@@ -52,7 +52,7 @@ class Orc(magik: Magik) : Race(magik) {
                 colorize("&7- &aStronger than others"),
                 colorize("&7- &aDouble health (20 hearts)"),
                 colorize("&7- &cSlower than most"),
-                colorize("&7- &72.5 blocks tall")
+                colorize("&7- &73 blocks tall")
             ))
         }
 
