@@ -30,6 +30,8 @@ class Druid(magik: Magik) : Race(magik) {
 
     private val maxHealth = 16.0
 
+    private val thornsChance = 75
+
     private val stickName = "&aStick of Life"
     private val stick = CustomItem(magik, Material.STICK, 1, stickName,
         listOf("&6Right click on crops to grow and harvest them", "&7Has a 5 second cooldown every 5 uses."),
@@ -76,7 +78,7 @@ class Druid(magik: Magik) : Race(magik) {
                 colorize("&7Great for farmers"),
                 colorize("&7- &aStick Of Life: grows crops"),
                 colorize("&7- &aRegen when on grass"),
-                colorize("&7- &aPoison thorns"),
+                colorize("&7- &a$thornsChance% Chance for poison thorns"),
                 colorize("  &8- &aPoisons your attackers"),
                 colorize("  &8- &cActs like regen to undead mobs"),
                 colorize("&7- &aQuicker than most"),
@@ -269,8 +271,11 @@ class Druid(magik: Magik) : Race(magik) {
         val attacker = event.damager as? LivingEntity
             ?: return
 
-        attacker.addPotionEffect(PotionEffect(PotionEffectType.POISON, 5 * 20, 1))
-        displayParticles(player.location, Particle.HAPPY_VILLAGER, 20, 1.0, 2.0, 1.0)
+        // 25% chance to inflict poison thorns
+        if (random(1, 100) <= thornsChance) {
+            attacker.addPotionEffect(PotionEffect(PotionEffectType.POISON, 5 * 20, 1))
+            displayParticles(player.location, Particle.HAPPY_VILLAGER, 20, 1.0, 2.0, 1.0)
+        }
     }
 
     @EventHandler

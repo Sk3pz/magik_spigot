@@ -6,6 +6,7 @@ import es.skepz.magik.Magik
 import es.skepz.magik.skepzlib.colorize
 import es.skepz.magik.skepzlib.playSound
 import es.skepz.magik.skepzlib.sendMessage
+import org.bukkit.Bukkit
 import org.bukkit.GameMode
 import org.bukkit.Material
 import org.bukkit.Sound
@@ -15,15 +16,18 @@ import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.block.Action
 import org.bukkit.event.entity.EntityDamageEvent
+import org.bukkit.event.entity.EntityDismountEvent
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.inventory.InventoryType.*
 import org.bukkit.event.player.PlayerDropItemEvent
+import org.bukkit.event.player.PlayerInteractAtEntityEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerRespawnEvent
 import org.bukkit.inventory.ItemStack
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
+import org.bukkit.scheduler.BukkitRunnable
 
 class Avian(magik: Magik) : Race(magik) {
 
@@ -170,6 +174,62 @@ class Avian(magik: Magik) : Race(magik) {
     }
 
     @EventHandler
+    fun onPlayerInteractAtEntity(event: PlayerInteractAtEntityEvent) {
+        val player = event.player
+        if (!isAvian(player)) {
+            return
+        }
+
+        // check if the player's hand is empty
+        if (player.inventory.itemInMainHand.type != Material.AIR) {
+            return
+        }
+
+        // check if the entity is a player
+        if (event.rightClicked !is Player) {
+            return
+        }
+
+        // make the avian sit on the player
+        val target = event.rightClicked as Player
+        target.addPassenger(player)
+        target.allowFlight = true;
+    }
+
+    // when a player dismounts another player
+    @EventHandler
+    fun onPlayerDismount(event: EntityDismountEvent) {
+        if (event.entity !is Player || event.dismounted !is Player) {
+            return
+        }
+
+        val player = event.entity as Player
+        val target = event.dismounted as Player
+
+        if (!isAvian(player)) {
+            return
+        }
+
+        target.allowFlight = false
+    }
+
+    @EventHandler
+    fun onPlayerKinetic(event: EntityDamageEvent) {
+        if (event.entity !is Player) {
+            return
+        }
+        if (event.cause != EntityDamageEvent.DamageCause.FLY_INTO_WALL) {
+            return
+        }
+        if (isAvian(event.entity as Player)) {
+            event.isCancelled = true
+            return
+        }
+
+        event.isCancelled = true
+    }
+
+    @EventHandler
     fun onBoost(event: PlayerElytraBoostEvent) {
         val player = event.player
         if (!isAvian(player)) {
@@ -180,9 +240,15 @@ class Avian(magik: Magik) : Race(magik) {
             return
         }
 
-        if (firework.check(event.firework.item)) {
+        if (firework.check(event.itemStack)) {
+            // get the slot the firework was in
+            val slot = player.inventory.contents.indexOf(event.itemStack)
+
             player.inventory.remove(event.firework.item)
-            player.inventory.addItem(firework.generate())
+
+            Bukkit.getScheduler().scheduleSyncDelayedTask(magik, {
+                player.inventory.setItem(slot, firework.generate())
+            }, 5L)
         }
     }
 

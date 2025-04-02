@@ -69,7 +69,11 @@ class MagikCommand(val magik: Magik) : CoreCMD(magik, "magik", "&c/magik <&7set&
                         target.inventory.addItem(magik.specialItems.changeItem.generate())
                     }
                     "backpack" -> {
-                        target.inventory.addItem(Backpack(magik))
+                        var size = 9
+                        if (args.size > 3) {
+                            size = args[3].toIntOrNull() ?: 9
+                        }
+                        target.inventory.addItem(Backpack(magik, size))
                     }
                 }
             }
