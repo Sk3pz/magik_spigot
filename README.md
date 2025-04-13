@@ -20,7 +20,7 @@ Magik is a custom Minecraft plugin that introduces unique races, abilities, and 
 
 ## Races
 
-Each race comes with unique abilities and mechanics. For example:
+Each race comes with unique abilities and mechanics:
 - **Aquarian**: Become an aquatic creature with special swimming abilities.
 - **Avian**: Fly through the skies with enhanced agility, but don't get hit!
 - **Blazeborn**: Fight fire with fire, and embrace lava as your ally.
